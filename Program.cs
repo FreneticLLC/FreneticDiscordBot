@@ -160,6 +160,23 @@ public partial class Program
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Hi! I'm a bot! Find my source code at https://github.com/FreneticLLC/FreneticDiscordBot").Wait();
     }
 
+    static void WhatIsFrenetic(string[] cmds, SocketMessage message)
+    {
+        EmbedBuilder bed = new EmbedBuilder();
+        EmbedAuthorBuilder auth = new EmbedAuthorBuilder();
+        auth.Name = "Frenetic LLC";
+        auth.IconUrl = client.CurrentUser.AvatarUrl;
+        auth.Url = "https://freneticllc.com";
+        bed.Author = auth;
+        bed.Color = new Color(0xC8, 0x74, 0x4B);
+        bed.Title = "What is Frenetic LLC?";
+        bed.Description = "Frenetic LLC is a California registered limited liability company.";
+        bed.AddField((efb) => efb.WithName("What does Frenetic LLC do?").WithValue("In short: We make games!"));
+        bed.AddField((efb) => efb.WithName("Who is Frenetic LLC?").WithValue("We are an international team! Check out the #meet-the-team channel!"));
+        bed.Footer = new EmbedFooterBuilder().WithIconUrl(auth.IconUrl).WithText("Copyright (C) Frenetic LLC");
+            message.Channel.SendMessageAsync(POSITIVE_PREFIX, embed: bed.Build()).Wait();
+    }
+
     static void DefaultCommands()
     {
         CommonCmds["quotes"] = ShowQuote;
@@ -180,6 +197,17 @@ public partial class Program
         CommonCmds["github"] = Hello;
         CommonCmds["git"] = Hello;
         CommonCmds["hub"] = Hello;
+        CommonCmds["who"] = WhatIsFrenetic;
+        CommonCmds["what"] = WhatIsFrenetic;
+        CommonCmds["where"] = WhatIsFrenetic;
+        CommonCmds["why"] = WhatIsFrenetic;
+        CommonCmds["frenetic"] = WhatIsFrenetic;
+        CommonCmds["llc"] = WhatIsFrenetic;
+        CommonCmds["freneticllc"] = WhatIsFrenetic;
+        CommonCmds["website"] = WhatIsFrenetic;
+        CommonCmds["team"] = WhatIsFrenetic;
+        CommonCmds["company"] = WhatIsFrenetic;
+        CommonCmds["business"] = WhatIsFrenetic;
     }
 
     static void Main(string[] args)
