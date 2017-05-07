@@ -147,12 +147,17 @@ public partial class Program
     }
 
     public static string CmdsHelp = 
-            "`help`, `quote`, "
+            "`help`, `quote`, `hello`, "
             + "...";
 
     static void Help(string[] cmds, SocketMessage message)
     {
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Available Commands:\n" + CmdsHelp).Wait();
+    }
+
+    static void Hello(string[] cmds, SocketMessage message)
+    {
+            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Hi! I'm a bot! Find my source code at https://github.com/FreneticLLC/FreneticDiscordBot").Wait();
     }
 
     static void DefaultCommands()
@@ -167,6 +172,14 @@ public partial class Program
         CommonCmds["hel"] = Help;
         CommonCmds["hal"] = Help;
         CommonCmds["h"] = Help;
+        CommonCmds["hello"] = Hello;
+        CommonCmds["hi"] = Hello;
+        CommonCmds["hey"] = Hello;
+        CommonCmds["source"] = Hello;
+        CommonCmds["src"] = Hello;
+        CommonCmds["github"] = Hello;
+        CommonCmds["git"] = Hello;
+        CommonCmds["hub"] = Hello;
     }
 
     static void Main(string[] args)
