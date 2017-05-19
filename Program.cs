@@ -171,21 +171,19 @@ public partial class Program
     {
         // NOTE: This implies a one-guild bot. A multi-guild bot probably shouldn't have this "BotCommander" role-based verification.
         // But under current scale, a true-admin confirmation isn't worth the bother.
-        if (IsBotCommander(message.Author))
+        if (!IsBotCommander(message.Author))
         {
             message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! That's not for you!").Wait();
+            return;
         }
-        else
+        if (!File.Exists("./start.sh"))
         {
-            if (!File.Exists("./start.sh"))
-            {
-                message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! That's not valid for my current configuration!").Wait();
-            }
-            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Yes, boss. Restarting now...").Wait();
-            Process.Start("sh", "./start.sh " + message.Channel.Id).WaitForExit();
-            client.StopAsync().Wait();
-            Environment.Exit(0);
+            message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! That's not valid for my current configuration!").Wait();
         }
+        message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Yes, boss. Restarting now...").Wait();
+        Process.Start("sh", "./start.sh " + message.Channel.Id).WaitForExit();
+        client.StopAsync().Wait();
+        Environment.Exit(0);
     }
 
     static void CMD_WhatIsFrenetic(string[] cmds, SocketMessage message)
