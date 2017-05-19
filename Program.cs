@@ -182,7 +182,7 @@ public partial class Program
         bed.Color = new Color(0xC8, 0x74, 0x4B);
         bed.Title = "Who is " + auth.Name + "?";
         bed.Description = auth.Name + " is a Discord user!";
-        bed.AddField((efb) => efb.WithName("When did they join Discord?").WithValue(user.CreatedAt.ToString()));
+        bed.AddField((efb) => efb.WithName("When did they join Discord?").WithValue(FormatDT(user.CreatedAt)));
         bed.AddField((efb) => efb.WithName("What are they playing right now?").WithValue(user.Game.HasValue ? user.Game.Value.Name : "Nothing."));
         StringBuilder roleBuilder = new StringBuilder();
         foreach (SocketRole role in (user as SocketGuildUser).Roles) 
@@ -226,6 +226,23 @@ public partial class Program
             Environment.Exit(0);
         });
         client.StopAsync().Wait();
+    }
+
+    static string Pad2(int num)
+    {
+        return num < 10 ? "0" + num : num.ToString();
+    }
+
+    static string AddPlus(double d)
+    {
+        return d < 0 ? d.ToString() : "+" + d;
+    }
+
+    static string FormatDT(DateTimeOffset dtoff)
+    {
+        return dtoff.Year + "/" + Pad2(dtoff.Month) + "/" + Pad2(dtoff.Day)
+        + " " + Pad2(dtoff.Hour) + ":" + Pad2(dtoff.Minute) + ":" + Pad2(dtoff.Second)
+         + " UTC" + AddPlus(dtoff.Offset.TotalHours);
     }
 
     static void CMD_WhatIsFrenetic(string[] cmds, SocketMessage message)
