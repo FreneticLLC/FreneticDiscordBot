@@ -162,6 +162,38 @@ public partial class Program
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Hi! I'm a bot! Find my source code at https://github.com/FreneticLLC/FreneticDiscordBot").Wait();
     }
 
+    static void CMD_SelfInfo(string[] cmds, SocketMessage message)
+    {
+        SocketUser user = message.Author;
+        foreach (SocketUser tuser in message.MentionedUsers)
+        {
+            if (tuser.Id != client.CurrentUser.Id)
+            {
+                user = tuser;
+                break;
+            }
+        }
+        EmbedBuilder bed = new EmbedBuilder();
+        EmbedAuthorBuilder auth = new EmbedAuthorBuilder();
+        auth.Name = user.Username + "#" + user.DiscriminatorValue;
+        auth.IconUrl = user.GetAvatarUrl();
+        auth.Url = user.GetAvatarUrl();
+        bed.Author = auth;
+        bed.Color = new Color(0xC8, 0x74, 0x4B);
+        bed.Title = "Who is " + auth.Name + "?";
+        bed.Description = auth.Name + " is a Discord user!";
+        bed.AddField((efb) => efb.WithName("When did they join Discord?").WithValue(user.CreatedAt.ToString()));
+        bed.AddField((efb) => efb.WithName("What are they playing right now?").WithValue(user.Game.HasValue ? user.Game.Value.Name : "Nothing."));
+        StringBuilder roleBuilder = new StringBuilder();
+        foreach (SocketRole role in (user as SocketGuildUser).Roles) 
+        {
+            roleBuilder.Append(", " + role.Name);
+        }
+        bed.AddField((efb) => efb.WithName("What roles are they assigned here?").WithValue(roleBuilder.Length > 0 ? roleBuilder.ToString().Substring(2) : "None currently."));
+        bed.Footer = new EmbedFooterBuilder().WithIconUrl(client.CurrentUser.GetAvatarUrl()).WithText("Info provided by FreneticDiscordBot, which is Copyright (C) Frenetic LLC");
+        message.Channel.SendMessageAsync(POSITIVE_PREFIX, embed: bed.Build()).Wait();
+    }
+
     static bool IsBotCommander(SocketUser usr)
     {
         return (usr as SocketGuildUser).Roles.Where((role) => role.Name.ToLowerInvariant() =="botcommander").FirstOrDefault() != null;
@@ -210,7 +242,7 @@ public partial class Program
         bed.AddField((efb) => efb.WithName("What does Frenetic LLC do?").WithValue("In short: We make games!"));
         bed.AddField((efb) => efb.WithName("Who is Frenetic LLC?").WithValue("We are an international team! Check out the #meet-the-team channel!"));
         bed.Footer = new EmbedFooterBuilder().WithIconUrl(auth.IconUrl).WithText("Copyright (C) Frenetic LLC");
-            message.Channel.SendMessageAsync(POSITIVE_PREFIX, embed: bed.Build()).Wait();
+        message.Channel.SendMessageAsync(POSITIVE_PREFIX, embed: bed.Build()).Wait();
     }
 
     static void DefaultCommands()
@@ -245,6 +277,13 @@ public partial class Program
         CommonCmds["company"] = CMD_WhatIsFrenetic;
         CommonCmds["business"] = CMD_WhatIsFrenetic;
         CommonCmds["restart"] = CMD_Restart;
+        CommonCmds["selfinfo"] = CMD_SelfInfo;
+        CommonCmds["whoami"] = CMD_SelfInfo;
+        CommonCmds["whois"] = CMD_SelfInfo;
+        CommonCmds["userinfo"] = CMD_SelfInfo;
+        CommonCmds["userprofile"] = CMD_SelfInfo;
+        CommonCmds["profile"] = CMD_SelfInfo;
+        CommonCmds["prof"] = CMD_SelfInfo;
     }
 
     static void Main(string[] args)
@@ -284,7 +323,7 @@ public partial class Program
                     break;
                 }
             }
-                Console.WriteLine("Parsing message from (" + message.Author.Username + "), in channel: " + message.Channel.Name + ": " + message.Content);
+            Console.WriteLine("Parsing message from (" + message.Author.Username + "), in channel: " + message.Channel.Name + ": " + message.Content);
             if (mentionedMe)
             {
                 Respond(message);
