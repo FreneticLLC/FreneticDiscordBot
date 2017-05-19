@@ -255,6 +255,7 @@ public partial class Program
         client = new DiscordSocketClient();
         client.Connected += () =>
         {
+            Console.WriteLine("Args: " + args.Length);
             if (args.Length > 0 && ulong.TryParse(args[0], out ulong a1))
             {
                 ISocketMessageChannel chan = (client.GetChannel(a1) as ISocketMessageChannel);
