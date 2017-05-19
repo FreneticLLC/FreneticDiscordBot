@@ -1,11 +1,13 @@
 using System;
 using System.Text;
 using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord.Net;
 using Discord;
 using Discord.WebSocket;
+using System.Diagnostics;
 
 public partial class Program
 {
@@ -78,7 +80,7 @@ public partial class Program
         return false;
     }
 
-    static void ShowQuote(string[] cmds, SocketMessage message)
+    static void CMD_ShowQuote(string[] cmds, SocketMessage message)
     {
         for (int i = QuotesSeen.Count - 1; i >= 0; i--)
         {
@@ -150,22 +152,46 @@ public partial class Program
             "`help`, `quote`, `hello`, "
             + "...";
 
-    static void Help(string[] cmds, SocketMessage message)
+    static void CMD_Help(string[] cmds, SocketMessage message)
     {
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Available Commands:\n" + CmdsHelp).Wait();
     }
 
-    static void Hello(string[] cmds, SocketMessage message)
+    static void CMD_Hello(string[] cmds, SocketMessage message)
     {
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Hi! I'm a bot! Find my source code at https://github.com/FreneticLLC/FreneticDiscordBot").Wait();
     }
 
-    static void WhatIsFrenetic(string[] cmds, SocketMessage message)
+    static bool IsBotCommander(SocketUser usr)
+    {
+        return (usr as SocketGuildUser).Roles.Where((role) => role.Name.ToLowerInvariant() =="botcommander").FirstOrDefault() != null;
+    }
+
+    static void CMD_Restart(string[] cmds, SocketMessage message)
+    {
+        // NOTE: This implies a one-guild bot. A multi-guild bot probably shouldn't have this "BotCommander" role-based verification.
+        // But under current scale, a true-admin confirmation isn't worth the bother.
+        if (IsBotCommander(message.Author))
+        {
+            message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! That's not for you!").Wait();
+        }
+        else
+        {
+            if (File.Exists("./start.sh"))
+            {
+                Process.Start("sh", "./start.sh " + message.Channel.Id);
+            }
+            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Yes, boss. Restarting now...").Wait();
+            Environment.Exit(0);
+        }
+    }
+
+    static void CMD_WhatIsFrenetic(string[] cmds, SocketMessage message)
     {
         EmbedBuilder bed = new EmbedBuilder();
         EmbedAuthorBuilder auth = new EmbedAuthorBuilder();
         auth.Name = "Frenetic LLC";
-        auth.IconUrl = client.CurrentUser.AvatarUrl;
+        auth.IconUrl = client.CurrentUser.GetAvatarUrl();
         auth.Url = "https://freneticllc.com";
         bed.Author = auth;
         bed.Color = new Color(0xC8, 0x74, 0x4B);
@@ -179,35 +205,36 @@ public partial class Program
 
     static void DefaultCommands()
     {
-        CommonCmds["quotes"] = ShowQuote;
-        CommonCmds["quote"] = ShowQuote;
-        CommonCmds["q"] = ShowQuote;
-        CommonCmds["help"] = Help;
-        CommonCmds["halp"] = Help;
-        CommonCmds["helps"] = Help;
-        CommonCmds["halps"] = Help;
-        CommonCmds["hel"] = Help;
-        CommonCmds["hal"] = Help;
-        CommonCmds["h"] = Help;
-        CommonCmds["hello"] = Hello;
-        CommonCmds["hi"] = Hello;
-        CommonCmds["hey"] = Hello;
-        CommonCmds["source"] = Hello;
-        CommonCmds["src"] = Hello;
-        CommonCmds["github"] = Hello;
-        CommonCmds["git"] = Hello;
-        CommonCmds["hub"] = Hello;
-        CommonCmds["who"] = WhatIsFrenetic;
-        CommonCmds["what"] = WhatIsFrenetic;
-        CommonCmds["where"] = WhatIsFrenetic;
-        CommonCmds["why"] = WhatIsFrenetic;
-        CommonCmds["frenetic"] = WhatIsFrenetic;
-        CommonCmds["llc"] = WhatIsFrenetic;
-        CommonCmds["freneticllc"] = WhatIsFrenetic;
-        CommonCmds["website"] = WhatIsFrenetic;
-        CommonCmds["team"] = WhatIsFrenetic;
-        CommonCmds["company"] = WhatIsFrenetic;
-        CommonCmds["business"] = WhatIsFrenetic;
+        CommonCmds["quotes"] = CMD_ShowQuote;
+        CommonCmds["quote"] = CMD_ShowQuote;
+        CommonCmds["q"] = CMD_ShowQuote;
+        CommonCmds["help"] = CMD_Help;
+        CommonCmds["halp"] = CMD_Help;
+        CommonCmds["helps"] = CMD_Help;
+        CommonCmds["halps"] = CMD_Help;
+        CommonCmds["hel"] = CMD_Help;
+        CommonCmds["hal"] = CMD_Help;
+        CommonCmds["h"] = CMD_Help;
+        CommonCmds["hello"] = CMD_Hello;
+        CommonCmds["hi"] = CMD_Hello;
+        CommonCmds["hey"] = CMD_Hello;
+        CommonCmds["source"] = CMD_Hello;
+        CommonCmds["src"] = CMD_Hello;
+        CommonCmds["github"] = CMD_Hello;
+        CommonCmds["git"] = CMD_Hello;
+        CommonCmds["hub"] = CMD_Hello;
+        CommonCmds["who"] = CMD_WhatIsFrenetic;
+        CommonCmds["what"] = CMD_WhatIsFrenetic;
+        CommonCmds["where"] = CMD_WhatIsFrenetic;
+        CommonCmds["why"] = CMD_WhatIsFrenetic;
+        CommonCmds["frenetic"] = CMD_WhatIsFrenetic;
+        CommonCmds["llc"] = CMD_WhatIsFrenetic;
+        CommonCmds["freneticllc"] = CMD_WhatIsFrenetic;
+        CommonCmds["website"] = CMD_WhatIsFrenetic;
+        CommonCmds["team"] = CMD_WhatIsFrenetic;
+        CommonCmds["company"] = CMD_WhatIsFrenetic;
+        CommonCmds["business"] = CMD_WhatIsFrenetic;
+        CommonCmds["restart"] = CMD_Restart;
     }
 
     static void Main(string[] args)
@@ -216,13 +243,23 @@ public partial class Program
         DefaultCommands();
         Console.WriteLine("Loading Discord...");
         client = new DiscordSocketClient();
+        client.Connected += () =>
+        {
+            if (args.Length > 0 && ulong.TryParse(args[0], out ulong a1))
+            {
+                ISocketMessageChannel chan = (client.GetChannel(a1) as ISocketMessageChannel);
+                Console.WriteLine("Restarted as per request in channel: " + chan.Name);
+                chan.SendMessageAsync("Connected and ready!").Wait();
+            }
+            return Task.CompletedTask;
+        };
         client.MessageReceived += (message) =>
         {
             if (message.Author.Id == client.CurrentUser.Id)
             {
                 return Task.CompletedTask;
             }
-            if (message.Channel.Name.StartsWith("@"))
+            if (message.Channel.Name.StartsWith("@") || !(message.Channel is SocketGuildChannel))
             {
                 Console.WriteLine("Refused message from (" + message.Author.Username + "): (Invalid Channel: " + message.Channel.Name + "): " + message.Content);
                 return Task.CompletedTask;
@@ -246,7 +283,7 @@ public partial class Program
         Console.WriteLine("Logging in to Discord...");
         client.LoginAsync(TokenType.Bot, TOKEN).Wait();
         Console.WriteLine("Connecting to Discord...");
-        client.ConnectAsync().Wait();
+        client.StartAsync().Wait();
         Console.WriteLine("Running Discord!");
         Task.Delay(-1).Wait(); // Politely wait FOREVER (or until program shutdown, of course!)
     }
