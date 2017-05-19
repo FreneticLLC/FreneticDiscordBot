@@ -182,9 +182,18 @@ public partial class Program
         }
         message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Yes, boss. Restarting now...").Wait();
         Process.Start("sh", "./start.sh " + message.Channel.Id);
+        Task.Factory.StartNew(() =>
+        {
+            Console.WriteLine("Shutdown start...");
+            for (int i = 0; i < 15; i++)
+            {
+                Console.WriteLine("T Minus " + (15 - i));
+                Task.Delay(1000).Wait();
+            }
+            Console.WriteLine("Shutdown!");
+            Environment.Exit(0);
+        });
         client.StopAsync().Wait();
-        Task.Delay(15000).Wait();
-        Environment.Exit(0);
     }
 
     static void CMD_WhatIsFrenetic(string[] cmds, SocketMessage message)
