@@ -187,7 +187,10 @@ public partial class Program
         StringBuilder roleBuilder = new StringBuilder();
         foreach (SocketRole role in (user as SocketGuildUser).Roles) 
         {
-            roleBuilder.Append(", " + role.Name);
+            if (!role.IsEveryone)
+            {
+                roleBuilder.Append(", " + role.Name);
+            }
         }
         bed.AddField((efb) => efb.WithName("What roles are they assigned here?").WithValue(roleBuilder.Length > 0 ? roleBuilder.ToString().Substring(2) : "None currently."));
         bed.Footer = new EmbedFooterBuilder().WithIconUrl(client.CurrentUser.GetAvatarUrl()).WithText("Info provided by FreneticDiscordBot, which is Copyright (C) Frenetic LLC");
