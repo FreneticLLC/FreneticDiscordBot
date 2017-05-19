@@ -253,7 +253,7 @@ public partial class Program
         DefaultCommands();
         Console.WriteLine("Loading Discord...");
         client = new DiscordSocketClient();
-        client.Connected += () =>
+        client.Ready += () =>
         {
             Console.WriteLine("Args: " + args.Length);
             if (args.Length > 0 && ulong.TryParse(args[0], out ulong a1))
