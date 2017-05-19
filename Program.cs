@@ -177,11 +177,13 @@ public partial class Program
         }
         else
         {
-            if (File.Exists("./start.sh"))
+            if (!File.Exists("./start.sh"))
             {
-                Process.Start("sh", "./start.sh " + message.Channel.Id);
+                message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! That's not valid for my current configuration!").Wait();
             }
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Yes, boss. Restarting now...").Wait();
+            Process.Start("sh", "./start.sh " + message.Channel.Id).WaitForExit();
+            client.StopAsync().Wait();
             Environment.Exit(0);
         }
     }
