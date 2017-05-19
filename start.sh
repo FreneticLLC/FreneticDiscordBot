@@ -1,3 +1,3 @@
 #!/bin/sh
 dotnet restore
-screen -dmS FreneticBot dotnet run $1
+screen -dmS FreneticBot dotnet run -- $1
