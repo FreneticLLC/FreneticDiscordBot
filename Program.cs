@@ -355,6 +355,16 @@ public partial class Program
         Console.WriteLine("Connecting to Discord...");
         client.StartAsync().Wait();
         Console.WriteLine("Running Discord!");
-        Task.Delay(-1).Wait(); // Politely wait FOREVER (or until program shutdown, of course!)
+        while (true)
+        {
+            string read = Console.ReadLine();
+            string[] dats = read.Split(new char[] { ' ' }, 2);
+            string cmd = dats[0].ToLowerInvariant();
+            if (cmd == "quit" || cmd == "stop" || cmd == "exit")
+            {
+                client.StopAsync().Wait();
+                Environment.Exit(0);
+            }
+        }
     }
 }
