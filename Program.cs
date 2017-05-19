@@ -175,7 +175,7 @@ public partial class Program
         }
         EmbedBuilder bed = new EmbedBuilder();
         EmbedAuthorBuilder auth = new EmbedAuthorBuilder();
-        auth.Name = user.Username + "#" + user.DiscriminatorValue;
+        auth.Name = user.Username + "#" + user.Discriminator;
         auth.IconUrl = user.GetAvatarUrl();
         auth.Url = user.GetAvatarUrl();
         bed.Author = auth;
