@@ -181,8 +181,9 @@ public partial class Program
             message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! That's not valid for my current configuration!").Wait();
         }
         message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Yes, boss. Restarting now...").Wait();
-        Process.Start("sh", "./start.sh " + message.Channel.Id).WaitForExit();
+        Process.Start("sh", "./start.sh " + message.Channel.Id);
         client.StopAsync().Wait();
+        Task.Delay(15000).Wait();
         Environment.Exit(0);
     }
 
