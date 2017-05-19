@@ -11,8 +11,8 @@
     <EmbeddedResource Include="**\*.resx"/>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="1.0.0-rc-00544"/>
-    <PackageReference Include="Discord.Net.WebSocket" Version="1.0.0-rc-00544"/>
+    <PackageReference Include="Discord.Net" Version="1.0.0-rc-00743"/>
+    <PackageReference Include="Discord.Net.WebSocket" Version="1.0.0-rc-00743"/>
     <PackageReference Include="Octokit" Version="0.24.1-alpha0001"/>
   </ItemGroup>
 </Project>

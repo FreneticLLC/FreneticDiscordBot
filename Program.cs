@@ -249,7 +249,7 @@ public partial class Program
             {
                 ISocketMessageChannel chan = (client.GetChannel(a1) as ISocketMessageChannel);
                 Console.WriteLine("Restarted as per request in channel: " + chan.Name);
-                chan.SendMessageAsync("Connected and ready!").Wait();
+                chan.SendMessageAsync(POSITIVE_PREFIX + "Connected and ready!").Wait();
             }
             return Task.CompletedTask;
         };
