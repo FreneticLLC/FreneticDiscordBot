@@ -103,6 +103,7 @@ public partial class Program
         }
         else if (int.TryParse(cmds[0], out qid))
         {
+            qid--;
             if (qid < 0)
             {
                 qid = 0;
@@ -141,7 +142,7 @@ public partial class Program
         if (qid >= 0 && qid < Quotes.Length)
         {
             QuotesSeen.Add(new QuoteSeen() { QID = qid, Time = DateTime.UtcNow });
-            string quoteRes = POSITIVE_PREFIX + "Quote **" + qid + "**:\n```xml\n" + Quotes[qid] + "\n```\n";
+            string quoteRes = POSITIVE_PREFIX + "Quote **" + (qid + 1) + "**:\n```xml\n" + Quotes[qid] + "\n```\n";
             message.Channel.SendMessageAsync(quoteRes).Wait();
         }
     }
