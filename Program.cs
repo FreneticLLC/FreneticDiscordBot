@@ -115,14 +115,12 @@ public partial class Program
         else
         {
             List<int> spots = new List<int>();
+            string input_opt = string.Join(" ", cmds);
             for (int i = 0; i < Quotes.Length; i++)
             {
-                for (int x = 0; x < cmds.Length; x++)
+                if (Quotes[i].ToLowerInvariant().Contains(input_opt.ToLowerInvariant()))
                 {
-                    if (Quotes[i].ToLowerInvariant().Contains(cmds[x].ToLowerInvariant()))
-                    {
-                        spots.Add(i);
-                    }
+                    spots.Add(i);
                 }
             }
             if (spots.Count == 0)
@@ -149,7 +147,7 @@ public partial class Program
     }
 
     public static string CmdsHelp = 
-            "`help`, `quote`, `hello`, "
+            "`help`, `quote`, `hello`, `restart`, `frenetic`, `whois`, "
             + "...";
 
     static void CMD_Help(string[] cmds, SocketMessage message)
