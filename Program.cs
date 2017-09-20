@@ -37,7 +37,10 @@ public partial class Program
                 continue;
             }
             resBuild.Append(mesdat[i]).Append(" ");
-            cmds.Add(mesdat[i]);
+            if (mesdat[i].Length > 0)
+            {
+                cmds.Add(mesdat[i]);
+            }
         }
         if (cmds.Count == 0)
         {
@@ -346,6 +349,14 @@ public partial class Program
             if (mentionedMe)
             {
                 Respond(message);
+            }
+            else
+            {
+                String mesLow = message.Content.ToLowerInvariant();
+                if (mesLow.StartsWith("yay"))
+                {
+                    message.Channel.SendMessageAsync(POSITIVE_PREFIX + "YAY!!!").Wait();
+                }
             }
             return Task.CompletedTask;
         };
