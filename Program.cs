@@ -287,7 +287,7 @@ public partial class Program
         }
         String goal = cmds[0].ToLowerInvariant();
         IEnumerable<ITextChannel> channels = (message.Channel as IGuildChannel)
-                .Guild.GetTextChannelsAsync().Result.Where((tc) => tc.Name.ToLowerInvariant().Replace("#", "").Equals(ks.AllChannelsTo));
+                .Guild.GetTextChannelsAsync().Result.Where((tc) => tc.Name.ToLowerInvariant().Replace("#", "").Equals(goal));
         if (channels.Count() == 0)
         {
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Disabling sending.").Wait();
@@ -297,7 +297,7 @@ public partial class Program
             {
                 sbRes.Append("`").Append(itc.Name).Append("`, ");
             }
-            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Available: " + sbRes.ToString()).Wait();
+            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Given: `" + goal + "`, Available: " + sbRes.ToString()).Wait();
             goal = null;
         }
         ks.AllChannelsTo = goal;
