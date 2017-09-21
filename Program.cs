@@ -497,7 +497,7 @@ public partial class Program
             }
             Console.WriteLine("Outputted!");
             ITextChannel outputter = channels.First();
-            outputter.SendMessageAsync(POSITIVE_PREFIX + "Message deleted... message from: `"
+            outputter.SendMessageAsync(POSITIVE_PREFIX + "Message deleted (`"  + mValue.Channel.Name + "`)... message from: `"
                     + mValue.Author.Username + "#" + mValue.Author.Discriminator 
                     + "`: ```\n" + mValue.Content.Replace('`', '\'') + "\n```").Wait();
             return Task.CompletedTask;
@@ -538,7 +538,7 @@ public partial class Program
                 return Task.CompletedTask;
             }
             ITextChannel outputter = channels.First();
-            outputter.SendMessageAsync(POSITIVE_PREFIX + "Message edited... message from: `"
+            outputter.SendMessageAsync(POSITIVE_PREFIX + "Message edited(`"  + mValue.Channel.Name + "`)... message from: `"
                     + mValue.Author.Username + "#" + mValue.Author.Discriminator 
                     + "`: ```\n" + mValue.Content.Replace('`', '\'') + "\n```\nBecame:\n```"
                     + mNew.Content.Replace('`', '\'') + "\n```");
