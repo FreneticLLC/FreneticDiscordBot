@@ -478,7 +478,7 @@ public partial class Program
                 Console.WriteLine("But it was in a weird channel?");
                 return Task.CompletedTask;
             }
-            if (!ServersConfig.TryGetValue(channel.GuildId, out KnownServer ks))
+            if (!ServersConfig.TryGetValue(channel.Guild.Id, out KnownServer ks))
             {
                 Console.WriteLine("But it wasn't in a known guild.");
                 return Task.CompletedTask;
@@ -522,7 +522,7 @@ public partial class Program
             {
                 return Task.CompletedTask;
             }
-            if (!ServersConfig.TryGetValue(channel.GuildId, out KnownServer ks))
+            if (!ServersConfig.TryGetValue(channel.Guild.Id, out KnownServer ks))
             {
                 return Task.CompletedTask;
             }
