@@ -537,6 +537,10 @@ public partial class Program
                 Console.WriteLine("Failed to match a channel: " + ks.AllChannelsTo);
                 return Task.CompletedTask;
             }
+            if (mNew.Content == mValue.Content)
+            {
+                return Task.CompletedTask;
+            }
             ITextChannel outputter = channels.First();
             outputter.SendMessageAsync(POSITIVE_PREFIX + "Message edited(`"  + mValue.Channel.Name + "`)... message from: `"
                     + mValue.Author.Username + "#" + mValue.Author.Discriminator 
