@@ -454,24 +454,30 @@ public partial class Program
         };
         client.MessageDeleted += (m, c) =>
         {
+            Console.WriteLine("A message was deleted!");
             if (!m.HasValue)
             {
+                Console.WriteLine("But I don't know what it was...");
                 return Task.CompletedTask;
             }
             if (m.Value.Author.Id == client.CurrentUser.Id)
             {
+                Console.WriteLine("Wait, I did that!");
                 return Task.CompletedTask;
             }
             if (!(c is IGuildChannel channel))
             {
+                Console.WriteLine("But it was in a weird channel?");
                 return Task.CompletedTask;
             }
             if (!ServersConfig.TryGetValue(channel.GuildId, out KnownServer ks))
             {
+                Console.WriteLine("But it wasn't in a known guild.");
                 return Task.CompletedTask;
             }
             if (ks.AllChannelsTo == null)
             {
+                Console.WriteLine("But it wasn't in a listening zone.");
                 return Task.CompletedTask;
             }
             IEnumerable<ITextChannel> channels = channel.Guild.GetTextChannelsAsync().Result.Where((tc) => tc.Name.ToLowerInvariant().Replace("#", "").Equals(ks.AllChannelsTo));
@@ -480,6 +486,7 @@ public partial class Program
                 Console.WriteLine("Failed to match a channel: " + ks.AllChannelsTo);
                 return Task.CompletedTask;
             }
+            Console.WriteLine("Outputted!");
             ITextChannel outputter = channels.First();
             outputter.SendMessageAsync(POSITIVE_PREFIX + "Message deleted... message from: `"
                     + m.Value.Author.Username + "#" + m.Value.Author.Discriminator 
