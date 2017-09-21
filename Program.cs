@@ -300,6 +300,10 @@ public partial class Program
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Given: `" + goal + "`, Available: " + sbRes.ToString()).Wait();
             goal = null;
         }
+        else
+        {
+            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Listening into: " + goal).Wait();
+        }
         ks.AllChannelsTo = goal;
         SaveChannelConfig();
     }
@@ -473,6 +477,7 @@ public partial class Program
             IEnumerable<ITextChannel> channels = channel.Guild.GetTextChannelsAsync().Result.Where((tc) => tc.Name.ToLowerInvariant().Replace("#", "").Equals(ks.AllChannelsTo));
             if (channels.Count() == 0)
             {
+                Console.WriteLine("Failed to match a channel: " + ks.AllChannelsTo);
                 return Task.CompletedTask;
             }
             ITextChannel outputter = channels.First();
@@ -506,6 +511,7 @@ public partial class Program
             IEnumerable<ITextChannel> channels = channel.Guild.GetTextChannelsAsync().Result.Where((tc) => tc.Name.ToLowerInvariant().Replace("#", "").Equals(ks.AllChannelsTo));
             if (channels.Count() == 0)
             {
+                Console.WriteLine("Failed to match a channel: " + ks.AllChannelsTo);
                 return Task.CompletedTask;
             }
             ITextChannel outputter = channels.First();
