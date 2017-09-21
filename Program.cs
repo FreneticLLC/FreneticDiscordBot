@@ -278,7 +278,7 @@ public partial class Program
         if (!ServersConfig.TryGetValue((message.Channel as IGuildChannel).Id, out KnownServer ks))
         {
             ks = new KnownServer();
-            ServersConfig[(message.Channel as IGuildChannel).Id] = ks;
+            ServersConfig[(message.Channel as IGuildChannel).Guild.Id] = ks;
         }
         if (cmds.Length == 0)
         {
