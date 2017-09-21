@@ -2,6 +2,7 @@ using System;
 using System.Text;
 using System.IO;
 using System.Linq;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord.Net;
@@ -151,7 +152,7 @@ public partial class Program
     }
 
     public static string CmdsHelp = 
-            "`help`, `quote`, `hello`, `restart`, `frenetic`, `whois`, "
+            "`help`, `quote`, `hello`, `restart`, `listeninto`, `frenetic`, `whois`, "
             + "...";
 
     static void CMD_Help(string[] cmds, SocketMessage message)
@@ -262,10 +263,58 @@ public partial class Program
         bed.Title = "What is Frenetic LLC?";
         bed.Description = "Frenetic LLC is a California registered limited liability company.";
         bed.AddField((efb) => efb.WithName("What does Frenetic LLC do?").WithValue("In short: We make games!"));
-        bed.AddField((efb) => efb.WithName("Who is Frenetic LLC?").WithValue("We are an international team! Check out the #meet-the-team channel!"));
+        bed.AddField((efb) => efb.WithName("Who is Frenetic LLC?").WithValue("We are an international team! Check out the #meet-the-team channel on the Frenetic LLC official Discord!"));
         bed.Footer = new EmbedFooterBuilder().WithIconUrl(auth.IconUrl).WithText("Copyright (C) Frenetic LLC");
         message.Channel.SendMessageAsync(POSITIVE_PREFIX, embed: bed.Build()).Wait();
     }
+
+    static void CMD_ListenInto(string[] cmds, SocketMessage message)
+    {
+        if (!IsBotCommander(message.Author))
+        {
+            message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! That's not for you!").Wait();
+            return;
+        }
+        if (!ServersConfig.TryGetValue((message.Channel as IGuildChannel).Id, out KnownServer ks))
+        {
+            ks = new KnownServer();
+            ServersConfig[(message.Channel as IGuildChannel).Id] = ks;
+        }
+        if (cmds.Length == 0)
+        {
+            message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! Consult documentation!").Wait();
+            return;
+        }
+        String goal = cmds[0].ToLowerInvariant();
+        IEnumerable<ITextChannel> channels = (message.Channel as IGuildChannel)
+                .Guild.GetTextChannelsAsync().Result.Where((tc) => tc.Name.ToLowerInvariant().Replace("#", "").Equals(ks.AllChannelsTo));
+        if (channels.Count() == 0)
+        {
+            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Disabling sending.").Wait();
+            goal = null;
+        }
+        ks.AllChannelsTo = goal;
+        SaveChannelConfig();
+    }
+    
+    public static void SaveChannelConfig()
+    {
+        lock (reSaveLock)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (KeyValuePair<ulong, KnownServer> ksEnt in ServersConfig)
+            {
+                sb.Append(ksEnt.Key).Append("\n");
+                if (ksEnt.Value.AllChannelsTo != null)
+                {
+                    sb.Append("\tall_channels_to:").Append(ksEnt.Value.AllChannelsTo).Append("\n");
+                }
+            }
+            File.WriteAllText("./config/config.txt", sb.ToString());
+        }
+    }
+
+    public static Object reSaveLock = new Object();
 
     static void DefaultCommands()
     {
@@ -306,12 +355,44 @@ public partial class Program
         CommonCmds["userprofile"] = CMD_SelfInfo;
         CommonCmds["profile"] = CMD_SelfInfo;
         CommonCmds["prof"] = CMD_SelfInfo;
+        CommonCmds["listeninto"] = CMD_ListenInto;
     }
+
+    public static ConcurrentDictionary<ulong, KnownServer> ServersConfig = new ConcurrentDictionary<ulong, KnownServer>();
 
     static void Main(string[] args)
     {
         Console.WriteLine("Preparing...");
         DefaultCommands();
+        if (File.Exists("./config/config.txt"))
+        {
+            string fileDat = File.ReadAllText("./config/config.txt").Replace("\r", "");
+            if (fileDat.Replace("\n", "").Length > 0)
+            {
+                string[] fdata = fileDat.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < fdata.Length; i++)
+                {
+                    string ln = fdata[i];
+                    ulong ul = ulong.Parse(ln);
+                    KnownServer ks = new KnownServer();
+                    ServersConfig[ul] = ks;
+                    int x;
+                    for (x = i; x < fdata.Length; x++)
+                    {
+                        if (!fdata[x].StartsWith(" ") && !fdata[x].StartsWith("\t"))
+                        {
+                            break;
+                        }
+                        string[] cln = fdata[x].Trim().Split(new char[] { ':' }, 2);
+                        if (cln[0].ToLowerInvariant() == "all_channels_to")
+                        {
+                            ks.AllChannelsTo = cln[1];
+                        }
+                    }
+                    i = x;
+                }
+            }
+        }
         Console.WriteLine("Loading Discord...");
         client = new DiscordSocketClient();
         client.Ready += () =>
@@ -360,6 +441,73 @@ public partial class Program
             }
             return Task.CompletedTask;
         };
+        client.MessageDeleted += (m, c) =>
+        {
+            if (!m.HasValue)
+            {
+                return Task.CompletedTask;
+            }
+            if (m.Value.Author.Id == client.CurrentUser.Id)
+            {
+                return Task.CompletedTask;
+            }
+            if (!(c is IGuildChannel channel))
+            {
+                return Task.CompletedTask;
+            }
+            if (!ServersConfig.TryGetValue(channel.GuildId, out KnownServer ks))
+            {
+                return Task.CompletedTask;
+            }
+            if (ks.AllChannelsTo == null)
+            {
+                return Task.CompletedTask;
+            }
+            IEnumerable<ITextChannel> channels = channel.Guild.GetTextChannelsAsync().Result.Where((tc) => tc.Name.ToLowerInvariant().Replace("#", "").Equals(ks.AllChannelsTo));
+            if (channels.Count() == 0)
+            {
+                return Task.CompletedTask;
+            }
+            ITextChannel outputter = channels.First();
+            outputter.SendMessageAsync(POSITIVE_PREFIX + "Message deleted... message from: `"
+                    + m.Value.Author.Username + "#" + m.Value.Author.Discriminator 
+                    + "`: ```\n" + m.Value.Content.Replace('`', '\'') + "\n```").Wait();
+            return Task.CompletedTask;
+        };
+        client.MessageUpdated += (m, mNew, c) =>
+        {
+            if (!m.HasValue)
+            {
+                return Task.CompletedTask;
+            }
+            if (m.Value.Author.Id == client.CurrentUser.Id)
+            {
+                return Task.CompletedTask;
+            }
+            if (!(c is IGuildChannel channel))
+            {
+                return Task.CompletedTask;
+            }
+            if (!ServersConfig.TryGetValue(channel.GuildId, out KnownServer ks))
+            {
+                return Task.CompletedTask;
+            }
+            if (ks.AllChannelsTo == null)
+            {
+                return Task.CompletedTask;
+            }
+            IEnumerable<ITextChannel> channels = channel.Guild.GetTextChannelsAsync().Result.Where((tc) => tc.Name.ToLowerInvariant().Replace("#", "").Equals(ks.AllChannelsTo));
+            if (channels.Count() == 0)
+            {
+                return Task.CompletedTask;
+            }
+            ITextChannel outputter = channels.First();
+            outputter.SendMessageAsync(POSITIVE_PREFIX + "Message edited... message from: `"
+                    + m.Value.Author.Username + "#" + m.Value.Author.Discriminator 
+                    + "`: ```\n" + m.Value.Content.Replace('`', '\'') + "\n```\nBecame:\n```"
+                    + mNew.Content.Replace('`', '\'') + "\n```");
+            return Task.CompletedTask;
+        };
         Console.WriteLine("Logging in to Discord...");
         client.LoginAsync(TokenType.Bot, TOKEN).Wait();
         Console.WriteLine("Connecting to Discord...");
@@ -376,5 +524,10 @@ public partial class Program
                 Environment.Exit(0);
             }
         }
+    }
+
+    public class KnownServer
+    {
+        public string AllChannelsTo = null;
     }
 }
