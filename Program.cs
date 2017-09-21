@@ -312,6 +312,7 @@ public partial class Program
     {
         lock (reSaveLock)
         {
+            Directory.CreateDirectory("./config/");
             StringBuilder sb = new StringBuilder();
             foreach (KeyValuePair<ulong, KnownServer> ksEnt in ServersConfig)
             {
