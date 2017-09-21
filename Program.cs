@@ -459,6 +459,7 @@ public partial class Program
             IMessage mValue;
             if (!m.HasValue)
             {
+                Console.WriteLine("But I don't see its data...");
                 mValue = m.GetOrDownloadAsync().Result;
             }
             else
@@ -504,8 +505,8 @@ public partial class Program
             IMessage mValue;
             if (!m.HasValue)
             {
+                Console.WriteLine("But I don't see its data...");
                 mValue = m.GetOrDownloadAsync().Result;
-                return Task.CompletedTask;
             }
             else
             {
