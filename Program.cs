@@ -408,6 +408,7 @@ public partial class Program
         client = new DiscordSocketClient();
         client.Ready += () =>
         {
+            client.SetGameAsync("https://freneticllc.com").Wait();
             Console.WriteLine("Args: " + args.Length);
             if (args.Length > 0 && ulong.TryParse(args[0], out ulong a1))
             {
@@ -455,12 +456,16 @@ public partial class Program
         client.MessageDeleted += (m, c) =>
         {
             Console.WriteLine("A message was deleted!");
+            IMessage mValue;
             if (!m.HasValue)
             {
-                Console.WriteLine("But I don't know what it was...");
-                return Task.CompletedTask;
+                mValue = m.GetOrDownloadAsync().Result;
             }
-            if (m.Value.Author.Id == client.CurrentUser.Id)
+            else
+            {
+                mValue = m.Value;
+            }
+            if (mValue.Author.Id == client.CurrentUser.Id)
             {
                 Console.WriteLine("Wait, I did that!");
                 return Task.CompletedTask;
@@ -489,17 +494,24 @@ public partial class Program
             Console.WriteLine("Outputted!");
             ITextChannel outputter = channels.First();
             outputter.SendMessageAsync(POSITIVE_PREFIX + "Message deleted... message from: `"
-                    + m.Value.Author.Username + "#" + m.Value.Author.Discriminator 
-                    + "`: ```\n" + m.Value.Content.Replace('`', '\'') + "\n```").Wait();
+                    + mValue.Author.Username + "#" + mValue.Author.Discriminator 
+                    + "`: ```\n" + mValue.Content.Replace('`', '\'') + "\n```").Wait();
             return Task.CompletedTask;
         };
         client.MessageUpdated += (m, mNew, c) =>
         {
+            Console.WriteLine("A message was edited!");
+            IMessage mValue;
             if (!m.HasValue)
             {
+                mValue = m.GetOrDownloadAsync().Result;
                 return Task.CompletedTask;
             }
-            if (m.Value.Author.Id == client.CurrentUser.Id)
+            else
+            {
+                mValue = m.Value;
+            }
+            if (mValue.Author.Id == client.CurrentUser.Id)
             {
                 return Task.CompletedTask;
             }
@@ -523,8 +535,8 @@ public partial class Program
             }
             ITextChannel outputter = channels.First();
             outputter.SendMessageAsync(POSITIVE_PREFIX + "Message edited... message from: `"
-                    + m.Value.Author.Username + "#" + m.Value.Author.Discriminator 
-                    + "`: ```\n" + m.Value.Content.Replace('`', '\'') + "\n```\nBecame:\n```"
+                    + mValue.Author.Username + "#" + mValue.Author.Discriminator 
+                    + "`: ```\n" + mValue.Content.Replace('`', '\'') + "\n```\nBecame:\n```"
                     + mNew.Content.Replace('`', '\'') + "\n```");
             return Task.CompletedTask;
         };
