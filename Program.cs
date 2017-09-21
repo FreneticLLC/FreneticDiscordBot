@@ -291,6 +291,13 @@ public partial class Program
         if (channels.Count() == 0)
         {
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Disabling sending.").Wait();
+            IEnumerable<ITextChannel> channels2 = (message.Channel as IGuildChannel).Guild.GetTextChannelsAsync().Result;
+            StringBuilder sbRes = new StringBuilder();
+            foreach (ITextChannel itc in channels2)
+            {
+                sbRes.Append("`").Append(itc.Name).Append("`, ");
+            }
+            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Available: " + sbRes.ToString()).Wait();
             goal = null;
         }
         ks.AllChannelsTo = goal;
