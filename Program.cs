@@ -405,7 +405,9 @@ public partial class Program
             }
         }
         Console.WriteLine("Loading Discord...");
-        client = new DiscordSocketClient();
+        DiscordSocketConfig config = new DiscordSocketConfig();
+        config.MessageCacheSize = 1024 * 1024;
+        client = new DiscordSocketClient(config);
         client.Ready += () =>
         {
             client.SetGameAsync("https://freneticllc.com").Wait();
@@ -460,7 +462,7 @@ public partial class Program
             if (!m.HasValue)
             {
                 Console.WriteLine("But I don't see its data...");
-                mValue = m.GetOrDownloadAsync().Result;
+                return Task.CompletedTask;
             }
             else
             {
@@ -506,7 +508,7 @@ public partial class Program
             if (!m.HasValue)
             {
                 Console.WriteLine("But I don't see its data...");
-                mValue = m.GetOrDownloadAsync().Result;
+                return Task.CompletedTask;
             }
             else
             {
