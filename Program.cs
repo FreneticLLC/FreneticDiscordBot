@@ -389,7 +389,7 @@ public partial class Program
                     KnownServer ks = new KnownServer();
                     ServersConfig[ul] = ks;
                     int x;
-                    for (x = i; x < fdata.Length; x++)
+                    for (x = i + 1; x < fdata.Length; x++)
                     {
                         if (!fdata[x].StartsWith(" ") && !fdata[x].StartsWith("\t"))
                         {
