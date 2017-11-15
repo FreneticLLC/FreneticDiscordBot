@@ -374,7 +374,7 @@ public partial class Program
 
     public static Dictionary<string, string> PositiveChatResponses = new Dictionary<string, string> {
         {"yay", "YAY!!!"},
-        {"woo", "HOO!!"}
+        {"woo!", "HOO!!"}
     };
 
     static void Main(string[] args)
