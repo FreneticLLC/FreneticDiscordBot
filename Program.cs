@@ -372,6 +372,11 @@ public partial class Program
 
     public static ConcurrentDictionary<ulong, KnownServer> ServersConfig = new ConcurrentDictionary<ulong, KnownServer>();
 
+    public static Dictionary<string, string> PositiveChatResponses = new Dictionary<string, string> {
+        {"yay", "YAY!!!"},
+        {"woo", "HOO!!"}
+    };
+
     static void Main(string[] args)
     {
         Console.WriteLine("Preparing...");
@@ -449,9 +454,11 @@ public partial class Program
             else
             {
                 String mesLow = message.Content.ToLowerInvariant();
-                if (mesLow.StartsWith("yay"))
-                {
-                    message.Channel.SendMessageAsync(POSITIVE_PREFIX + "YAY!!!").Wait();
+                foreach (string key in PositiveChatResponses.Keys) {
+                    if (mesLow.StartsWith(key))
+                    {
+                        message.Channel.SendMessageAsync(POSITIVE_PREFIX + PositiveChatResponses[key]).Wait();
+                    }
                 }
             }
             return Task.CompletedTask;
