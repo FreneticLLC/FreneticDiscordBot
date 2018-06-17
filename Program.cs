@@ -206,7 +206,7 @@ public class FreneticDiscordBot
             string[] roles = iguser.Roles.Where((r) => !r.IsEveryone).Select((r) => r.Name).ToArray();
             bed.AddField((efb) => efb.WithName("Current Roles").WithValue(roles.Length > 0 ? string.Join(", ", roles) : "None currently."));
         }
-        bed.Footer = new EmbedFooterBuilder().WithIconUrl("https://github.com/FreneticLLC/FreneticDiscordBot").WithText("Info provided by FreneticDiscordBot, which is Copyright (C) Frenetic LLC");
+        bed.Footer = new EmbedFooterBuilder().WithIconUrl(client.CurrentUser.GetAvatarUrl()).WithText("Info provided by FreneticDiscordBot, which is Copyright (C) Frenetic LLC");
         message.Channel.SendMessageAsync(POSITIVE_PREFIX, embed: bed.Build()).Wait();
     }
 
