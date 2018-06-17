@@ -1,7 +1,7 @@
 # FreneticDiscordBot
 
-This is a .NET Core C# based Discord bot.
+This is a C#/.NETCore based Discord bot.
 
-Designed for use by the Frenetic LLC team.
+Designed for use by the Frenetic LLC team, on our own Discord group(s).
 
-Copyright (C) 2017 Frenetic LLC, All Rights Reserved.
+Copyright (C) 2017-2018 Frenetic LLC, All Rights Reserved.

@@ -11,7 +11,7 @@
     <EmbeddedResource Include="**\*.resx"/>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="2.0.0-alpha-build-00829"/>
-    <PackageReference Include="Discord.Net.WebSocket" Version="2.0.0-alpha-build-00829"/>
+    <PackageReference Include="Discord.Net" Version="2.0.0-beta"/>
+    <PackageReference Include="Discord.Net.WebSocket" Version="2.0.0-beta"/>
   </ItemGroup>
 </Project>

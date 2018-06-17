@@ -4,17 +4,18 @@ using System.IO;
 using System.Linq;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Discord.Net;
 using Discord;
 using Discord.WebSocket;
 using System.Diagnostics;
 
-public partial class Program
+public class FreneticDiscordBot
 {
-    public static Random random = new Random();
+    // TODO: Clean and/or rewrite? This static-abusing mess is very lazy. This isn't even in a namespace.
 
-    public static DiscordSocketClient client;
+    public Random random = new Random();
 
     public static readonly string TOKEN = File.ReadAllText("./conf.txt");
 
@@ -26,7 +27,9 @@ public partial class Program
 
     public static string[] Quotes = File.ReadAllText("./quotes.txt").Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n\n", ((char)0x01).ToString()).Split((char)0x01);
 
-    public static void Respond(SocketMessage message)
+    public DiscordSocketClient client;
+
+    public void Respond(SocketMessage message)
     {
         string[] mesdat = message.Content.Split(' ');
         StringBuilder resBuild = new StringBuilder(message.Content.Length);
@@ -62,17 +65,18 @@ public partial class Program
         }
     }
 
-    public static Dictionary<string, Action<string[], SocketMessage>> CommonCmds = new Dictionary<string, Action<string[], SocketMessage>>(1024);
+    public Dictionary<string, Action<string[], SocketMessage>> CommonCmds = new Dictionary<string, Action<string[], SocketMessage>>(1024);
 
     public class QuoteSeen
     {
         public int QID;
+
         public DateTime Time;
     }
 
-    public static List<QuoteSeen> QuotesSeen = new List<QuoteSeen>();
+    public List<QuoteSeen> QuotesSeen = new List<QuoteSeen>();
 
-    public static bool QuoteWasSeen(int qid)
+    public bool QuoteWasSeen(int qid)
     {
         for (int i = 0; i < QuotesSeen.Count; i++)
         {
@@ -84,7 +88,7 @@ public partial class Program
         return false;
     }
 
-    static void CMD_ShowQuote(string[] cmds, SocketMessage message)
+    void CMD_ShowQuote(string[] cmds, SocketMessage message)
     {
         for (int i = QuotesSeen.Count - 1; i >= 0; i--)
         {
@@ -155,17 +159,17 @@ public partial class Program
             "`help`, `quote`, `hello`, `restart`, `listeninto`, `frenetic`, `whois`, "
             + "...";
 
-    static void CMD_Help(string[] cmds, SocketMessage message)
+    void CMD_Help(string[] cmds, SocketMessage message)
     {
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Available Commands:\n" + CmdsHelp).Wait();
     }
 
-    static void CMD_Hello(string[] cmds, SocketMessage message)
+    void CMD_Hello(string[] cmds, SocketMessage message)
     {
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Hi! I'm a bot! Find my source code at https://github.com/FreneticLLC/FreneticDiscordBot").Wait();
     }
 
-    static void CMD_SelfInfo(string[] cmds, SocketMessage message)
+    void CMD_SelfInfo(string[] cmds, SocketMessage message)
     {
         SocketUser user = message.Author;
         foreach (SocketUser tuser in message.MentionedUsers)
@@ -184,28 +188,38 @@ public partial class Program
         bed.Author = auth;
         bed.Color = new Color(0xC8, 0x74, 0x4B);
         bed.Title = "Who is " + auth.Name + "?";
-        bed.Description = auth.Name + " is a Discord user!";
-        bed.AddField((efb) => efb.WithName("When did they join Discord?").WithValue(FormatDT(user.CreatedAt)));
-        bed.AddField((efb) => efb.WithName("What are they playing right now?").WithValue(user.Game.HasValue ? user.Game.Value.Name : "Nothing."));
-        StringBuilder roleBuilder = new StringBuilder();
-        foreach (SocketRole role in (user as SocketGuildUser).Roles) 
+        bed.Description = auth.Name + " is a Discord " + (user.IsBot ? "bot" : (user.IsWebhook ? "webhook" : "user")) + "!";
+        bed.AddField((efb) => efb.WithName("Discord ID").WithValue(user.Id));
+        bed.AddField((efb) => efb.WithName("Discord Join Date").WithValue(FormatDT(user.CreatedAt)));
+        bed.AddField((efb) => efb.WithName("Current Status").WithValue(user.Status));
+        bed.AddField((efb) => efb.WithName("Current Activity").WithValue(user.Activity == null ? "Nothing." : (user.Activity.Type + ": " + user.Activity.Name)));
+        if (user is IGuildUser iguser)
         {
-            if (!role.IsEveryone)
+            if (iguser.JoinedAt.HasValue)
             {
-                roleBuilder.Append(", " + role.Name);
+                bed.AddField(efb => efb.WithName("Joined Here Date").WithValue(FormatDT(iguser.JoinedAt.Value)));
             }
+            bed.AddField(efb => efb.WithName("Current Nickname").WithValue(iguser.Nickname));
+            StringBuilder roleBuilder = new StringBuilder();
+            foreach (SocketRole role in (user as SocketGuildUser).Roles) 
+            {
+                if (!role.IsEveryone)
+                {
+                    roleBuilder.Append(", " + role.Name);
+                }
+            }
+            bed.AddField((efb) => efb.WithName("Current Roles").WithValue(roleBuilder.Length > 0 ? roleBuilder.ToString().Substring(2) : "None currently."));
         }
-        bed.AddField((efb) => efb.WithName("What roles are they assigned here?").WithValue(roleBuilder.Length > 0 ? roleBuilder.ToString().Substring(2) : "None currently."));
         bed.Footer = new EmbedFooterBuilder().WithIconUrl(client.CurrentUser.GetAvatarUrl()).WithText("Info provided by FreneticDiscordBot, which is Copyright (C) Frenetic LLC");
         message.Channel.SendMessageAsync(POSITIVE_PREFIX, embed: bed.Build()).Wait();
     }
 
-    static bool IsBotCommander(SocketUser usr)
+    bool IsBotCommander(SocketUser usr)
     {
         return (usr as SocketGuildUser).Roles.Where((role) => role.Name.ToLowerInvariant() =="botcommander").FirstOrDefault() != null;
     }
 
-    static void CMD_Restart(string[] cmds, SocketMessage message)
+    void CMD_Restart(string[] cmds, SocketMessage message)
     {
         // NOTE: This implies a one-guild bot. A multi-guild bot probably shouldn't have this "BotCommander" role-based verification.
         // But under current scale, a true-admin confirmation isn't worth the bother.
@@ -251,7 +265,7 @@ public partial class Program
          + " UTC" + AddPlus(dtoff.Offset.TotalHours);
     }
 
-    static void CMD_WhatIsFrenetic(string[] cmds, SocketMessage message)
+    void CMD_WhatIsFrenetic(string[] cmds, SocketMessage message)
     {
         EmbedBuilder bed = new EmbedBuilder();
         EmbedAuthorBuilder auth = new EmbedAuthorBuilder();
@@ -268,18 +282,14 @@ public partial class Program
         message.Channel.SendMessageAsync(POSITIVE_PREFIX, embed: bed.Build()).Wait();
     }
 
-    static void CMD_ListenInto(string[] cmds, SocketMessage message)
+    void CMD_ListenInto(string[] cmds, SocketMessage message)
     {
         if (!IsBotCommander(message.Author))
         {
             message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! That's not for you!").Wait();
             return;
         }
-        if (!ServersConfig.TryGetValue((message.Channel as IGuildChannel).Id, out KnownServer ks))
-        {
-            ks = new KnownServer();
-            ServersConfig[(message.Channel as IGuildChannel).Guild.Id] = ks;
-        }
+        KnownServer ks = ServersConfig.GetOrAdd((message.Channel as IGuildChannel).Id, (id) => new KnownServer());
         if (cmds.Length == 0)
         {
             message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! Consult documentation!").Wait();
@@ -308,7 +318,7 @@ public partial class Program
         SaveChannelConfig();
     }
     
-    public static void SaveChannelConfig()
+    public void SaveChannelConfig()
     {
         lock (reSaveLock)
         {
@@ -328,7 +338,7 @@ public partial class Program
 
     public static Object reSaveLock = new Object();
 
-    static void DefaultCommands()
+    void DefaultCommands()
     {
         CommonCmds["quotes"] = CMD_ShowQuote;
         CommonCmds["quote"] = CMD_ShowQuote;
@@ -370,9 +380,20 @@ public partial class Program
         CommonCmds["listeninto"] = CMD_ListenInto;
     }
 
-    public static ConcurrentDictionary<ulong, KnownServer> ServersConfig = new ConcurrentDictionary<ulong, KnownServer>();
+    public ConcurrentDictionary<ulong, KnownServer> ServersConfig = new ConcurrentDictionary<ulong, KnownServer>();
+
+    public bool ConnectedOnce = false;
+
+    public bool ConnectedCurrently = false;
+
+    public static FreneticDiscordBot CurrentBot = null;
 
     static void Main(string[] args)
+    {
+        CurrentBot = new FreneticDiscordBot(args);
+    }
+
+    public FreneticDiscordBot(string[] args)
     {
         Console.WriteLine("Preparing...");
         DefaultCommands();
@@ -407,23 +428,41 @@ public partial class Program
         }
         Console.WriteLine("Loading Discord...");
         DiscordSocketConfig config = new DiscordSocketConfig();
-        config.MessageCacheSize = 1024 * 1024;
+        config.MessageCacheSize = 256;
         client = new DiscordSocketClient(config);
         client.Ready += () =>
         {
+            if (StopAllLogic)
+            {
+                return Task.CompletedTask;
+            }
+            ConnectedCurrently = true;
             client.SetGameAsync("https://freneticllc.com").Wait();
+            if (ConnectedOnce)
+            {
+                return Task.CompletedTask;
+            }
             Console.WriteLine("Args: " + args.Length);
             if (args.Length > 0 && ulong.TryParse(args[0], out ulong a1))
             {
-                ISocketMessageChannel chan = (client.GetChannel(a1) as ISocketMessageChannel);
+                ISocketMessageChannel chan = client.GetChannel(a1) as ISocketMessageChannel;
                 Console.WriteLine("Restarted as per request in channel: " + chan.Name);
                 chan.SendMessageAsync(POSITIVE_PREFIX + "Connected and ready!").Wait();
             }
+            ConnectedOnce = true;
             return Task.CompletedTask;
         };
         client.MessageReceived += (message) =>
         {
+            if (StopAllLogic)
+            {
+                return Task.CompletedTask;
+            }
             if (message.Author.Id == client.CurrentUser.Id)
+            {
+                return Task.CompletedTask;
+            }
+            if (message.Author.IsBot || message.Author.IsWebhook)
             {
                 return Task.CompletedTask;
             }
@@ -432,15 +471,7 @@ public partial class Program
                 Console.WriteLine("Refused message from (" + message.Author.Username + "): (Invalid Channel: " + message.Channel.Name + "): " + message.Content);
                 return Task.CompletedTask;
             }
-            bool mentionedMe = false;
-            foreach (SocketUser user in message.MentionedUsers)
-            {
-                if (user.Id == client.CurrentUser.Id)
-                {
-                    mentionedMe = true;
-                    break;
-                }
-            }
+            bool mentionedMe = message.MentionedUsers.Any((su) => su.Id == client.CurrentUser.Id);
             Console.WriteLine("Parsing message from (" + message.Author.Username + "), in channel: " + message.Channel.Name + ": " + message.Content);
             if (mentionedMe)
             {
@@ -458,6 +489,10 @@ public partial class Program
         };
         client.MessageDeleted += (m, c) =>
         {
+            if (StopAllLogic)
+            {
+                return Task.CompletedTask;
+            }
             Console.WriteLine("A message was deleted!");
             IMessage mValue;
             if (!m.HasValue)
@@ -504,6 +539,10 @@ public partial class Program
         };
         client.MessageUpdated += (m, mNew, c) =>
         {
+            if (StopAllLogic)
+            {
+                return Task.CompletedTask;
+            }
             Console.WriteLine("A message was edited!");
             IMessage mValue;
             if (!m.HasValue)
@@ -548,6 +587,30 @@ public partial class Program
                     + mNew.Content.Replace('`', '\'') + "\n```");
             return Task.CompletedTask;
         };
+        Console.WriteLine("Prepping monitor...");
+        Task.Factory.StartNew(() =>
+        {
+            while (true)
+            {
+                Task.Delay(MonitorLoopTime).Wait();
+                if (StopAllLogic)
+                {
+                    return;
+                }
+                try
+                {
+                    MonitorLoop();
+                }
+                catch (Exception ex)
+                {
+                    if (ex is ThreadAbortException)
+                    {
+                        throw;
+                    }
+                    Console.WriteLine("Connection monitor loop had exception: " + ex.ToString());
+                }
+            }
+        });
         Console.WriteLine("Logging in to Discord...");
         client.LoginAsync(TokenType.Bot, TOKEN).Wait();
         Console.WriteLine("Connecting to Discord...");
@@ -563,6 +626,69 @@ public partial class Program
                 client.StopAsync().Wait();
                 Environment.Exit(0);
             }
+        }
+    }
+
+    public TimeSpan MonitorLoopTime = new TimeSpan(hours: 0, minutes: 1, seconds: 0);
+
+    public bool MonitorWasFailedAlready = false;
+
+    public bool StopAllLogic = false;
+
+    public void ForceRestartBot()
+    {
+        lock (MonitorLock)
+        {
+            StopAllLogic = true;
+        }
+        Task.Factory.StartNew(() =>
+        {
+            client.StopAsync().Wait();
+        });
+        CurrentBot = new FreneticDiscordBot(new string[0]);
+    }
+
+    public Object MonitorLock = new Object();
+
+    public long LoopsSilent = 0;
+
+    public long LoopsTotal = 0;
+
+    public void MonitorLoop()
+    {
+        bool isConnected;
+        lock (MonitorLock)
+        {
+            LoopsSilent++;
+            LoopsTotal++;
+            isConnected = ConnectedCurrently && client.ConnectionState == ConnectionState.Connected;
+        }
+        if (!isConnected)
+        {
+            Console.WriteLine("Monitor detected disconnected state!");
+        }
+        if (LoopsSilent > 60)
+        {
+            Console.WriteLine("Monitor detected over an hour of silence, and is assuming a disconnected state!");
+            isConnected = false;
+        }
+        if (LoopsTotal > 60 * 12)
+        {
+            Console.WriteLine("Monitor detected that the bot has been running for over 12 hours, and will restart soon!");
+            isConnected = false;
+        }
+        if (isConnected)
+        {
+            MonitorWasFailedAlready = false;
+        }
+        else
+        {
+            if (MonitorWasFailedAlready)
+            {
+                Console.WriteLine("Monitor is enforcing a restart!");
+                ForceRestartBot();
+            }
+            MonitorWasFailedAlready = true;
         }
     }
 
