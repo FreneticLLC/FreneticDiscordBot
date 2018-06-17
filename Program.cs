@@ -475,7 +475,18 @@ public class FreneticDiscordBot
             Console.WriteLine("Parsing message from (" + message.Author.Username + "), in channel: " + message.Channel.Name + ": " + message.Content);
             if (mentionedMe)
             {
-                Respond(message);
+                try
+                {
+                    Respond(message);
+                }
+                catch (Exception ex)
+                {
+                    if (ex is ThreadAbortException)
+                    {
+                        throw;
+                    }
+                    Console.WriteLine("Error handling command: " + ex.ToString());
+                }
             }
             else
             {
