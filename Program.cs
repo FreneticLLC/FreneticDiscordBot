@@ -193,24 +193,20 @@ public class FreneticDiscordBot
         bed.AddField((efb) => efb.WithName("Discord Join Date").WithValue(FormatDT(user.CreatedAt)));
         bed.AddField((efb) => efb.WithName("Current Status").WithValue(user.Status));
         bed.AddField((efb) => efb.WithName("Current Activity").WithValue(user.Activity == null ? "Nothing." : (user.Activity.Type + ": " + user.Activity.Name)));
-        if (user is IGuildUser iguser)
+        if (user is SocketGuildUser iguser)
         {
             if (iguser.JoinedAt.HasValue)
             {
                 bed.AddField(efb => efb.WithName("Joined Here Date").WithValue(FormatDT(iguser.JoinedAt.Value)));
             }
-            bed.AddField(efb => efb.WithName("Current Nickname").WithValue(iguser.Nickname));
-            StringBuilder roleBuilder = new StringBuilder();
-            foreach (SocketRole role in (user as SocketGuildUser).Roles) 
+            if (iguser.Nickname != null)
             {
-                if (!role.IsEveryone)
-                {
-                    roleBuilder.Append(", " + role.Name);
-                }
+                bed.AddField(efb => efb.WithName("Current Nickname").WithValue(iguser.Nickname));
             }
-            bed.AddField((efb) => efb.WithName("Current Roles").WithValue(roleBuilder.Length > 0 ? roleBuilder.ToString().Substring(2) : "None currently."));
+            string[] roles = iguser.Roles.Where((r) => !r.IsEveryone).Select((r) => r.Name).ToArray();
+            bed.AddField((efb) => efb.WithName("Current Roles").WithValue(roles.Length > 0 ? string.Join(", ", roles) : "None currently."));
         }
-        bed.Footer = new EmbedFooterBuilder().WithIconUrl(client.CurrentUser.GetAvatarUrl()).WithText("Info provided by FreneticDiscordBot, which is Copyright (C) Frenetic LLC");
+        bed.Footer = new EmbedFooterBuilder().WithIconUrl("https://github.com/FreneticLLC/FreneticDiscordBot").WithText("Info provided by FreneticDiscordBot, which is Copyright (C) Frenetic LLC");
         message.Channel.SendMessageAsync(POSITIVE_PREFIX, embed: bed.Build()).Wait();
     }
 
