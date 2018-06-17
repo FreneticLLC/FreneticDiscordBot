@@ -494,21 +494,6 @@ public class FreneticDiscordBot
                 return Task.CompletedTask;
             }
             Console.WriteLine("A message was deleted!");
-            IMessage mValue;
-            if (!m.HasValue)
-            {
-                Console.WriteLine("But I don't see its data...");
-                return Task.CompletedTask;
-            }
-            else
-            {
-                mValue = m.Value;
-            }
-            if (mValue.Author.Id == client.CurrentUser.Id)
-            {
-                Console.WriteLine("Wait, I did that!");
-                return Task.CompletedTask;
-            }
             if (!(c is IGuildChannel channel))
             {
                 Console.WriteLine("But it was in a weird channel?");
@@ -530,11 +515,32 @@ public class FreneticDiscordBot
                 Console.WriteLine("Failed to match a channel: " + ks.AllChannelsTo);
                 return Task.CompletedTask;
             }
-            Console.WriteLine("Outputted!");
             ITextChannel outputter = channels.First();
+            IMessage mValue;
+            if (!m.HasValue)
+            {
+                Console.WriteLine("But I don't see its data... Outputting a blankness note.");
+            outputter.SendMessageAsync(POSITIVE_PREFIX + "Message in `"  + c.Name + "` with id `" + c.Id + "` deleted. Specific content not known (likely an old message).").Wait();
+                return Task.CompletedTask;
+            }
+            else
+            {
+                mValue = m.Value;
+            }
+            if (mValue.Author.Id == client.CurrentUser.Id)
+            {
+                Console.WriteLine("Wait, I did that!");
+                return Task.CompletedTask;
+            }
+            if (mValue.Author.IsBot || mValue.Author.IsWebhook)
+            {
+                Console.WriteLine("But it was bot-posted!");
+                return Task.CompletedTask;
+            }
             outputter.SendMessageAsync(POSITIVE_PREFIX + "Message deleted (`"  + mValue.Channel.Name + "`)... message from: `"
                     + mValue.Author.Username + "#" + mValue.Author.Discriminator 
                     + "`: ```\n" + mValue.Content.Replace('`', '\'') + "\n```").Wait();
+            Console.WriteLine("Outputted!");
             return Task.CompletedTask;
         };
         client.MessageUpdated += (m, mNew, c) =>
@@ -544,30 +550,19 @@ public class FreneticDiscordBot
                 return Task.CompletedTask;
             }
             Console.WriteLine("A message was edited!");
-            IMessage mValue;
-            if (!m.HasValue)
-            {
-                Console.WriteLine("But I don't see its data...");
-                return Task.CompletedTask;
-            }
-            else
-            {
-                mValue = m.Value;
-            }
-            if (mValue.Author.Id == client.CurrentUser.Id)
-            {
-                return Task.CompletedTask;
-            }
             if (!(c is IGuildChannel channel))
             {
+                Console.WriteLine("But it was in a weird channel?");
                 return Task.CompletedTask;
             }
             if (!ServersConfig.TryGetValue(channel.Guild.Id, out KnownServer ks))
             {
+                Console.WriteLine("But it wasn't in a known guild.");
                 return Task.CompletedTask;
             }
             if (ks.AllChannelsTo == null)
             {
+                Console.WriteLine("But it wasn't in a listening zone.");
                 return Task.CompletedTask;
             }
             IEnumerable<ITextChannel> channels = channel.Guild.GetTextChannelsAsync().Result.Where((tc) => tc.Name.ToLowerInvariant().Replace("#", "").Equals(ks.AllChannelsTo));
@@ -576,11 +571,36 @@ public class FreneticDiscordBot
                 Console.WriteLine("Failed to match a channel: " + ks.AllChannelsTo);
                 return Task.CompletedTask;
             }
-            if (mNew.Content == mValue.Content)
+            ITextChannel outputter = channels.First();
+            if (mNew.Author.Id == client.CurrentUser.Id)
             {
+                Console.WriteLine("Wait, I did that!");
                 return Task.CompletedTask;
             }
-            ITextChannel outputter = channels.First();
+            if (mNew.Author.IsBot || mNew.Author.IsWebhook)
+            {
+                Console.WriteLine("But it was bot-posted!");
+                return Task.CompletedTask;
+            }
+            IMessage mValue;
+            if (!m.HasValue)
+            {
+                outputter.SendMessageAsync(POSITIVE_PREFIX + "Message edited(`"  + mNew.Channel.Name + "`)... message from: `"
+                        + mNew.Author.Username + "#" + mNew.Author.Discriminator 
+                        + "`:\n(Original message unknown)\nBecame:\n```"
+                        + mNew.Content.Replace('`', '\'') + "\n```");
+                Console.WriteLine("But I don't see its data... outputting what I can!");
+                return Task.CompletedTask;
+            }
+            else
+            {
+                mValue = m.Value;
+            }
+            if (mNew.Content == mValue.Content)
+            {
+                Console.WriteLine("But it was not an edit (reaction or similar instead)!");
+                return Task.CompletedTask;
+            }
             outputter.SendMessageAsync(POSITIVE_PREFIX + "Message edited(`"  + mValue.Channel.Name + "`)... message from: `"
                     + mValue.Author.Username + "#" + mValue.Author.Discriminator 
                     + "`: ```\n" + mValue.Content.Replace('`', '\'') + "\n```\nBecame:\n```"
