@@ -458,6 +458,7 @@ public class FreneticDiscordBot
             {
                 return Task.CompletedTask;
             }
+            LoopsSilent = 0;
             if (message.Author.IsBot || message.Author.IsWebhook)
             {
                 return Task.CompletedTask;
