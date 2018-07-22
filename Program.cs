@@ -10,6 +10,7 @@ using Discord.Net;
 using Discord;
 using Discord.WebSocket;
 using System.Diagnostics;
+using FreneticUtilities.FreneticDataSyntax;
 
 public class FreneticDiscordBot
 {
@@ -17,7 +18,13 @@ public class FreneticDiscordBot
 
     public Random random = new Random();
 
-    public static readonly string TOKEN = File.ReadAllText("./conf.txt");
+    public const string CONFIG_FOLDER = "./config/";
+
+    public const string TOKEN_FILE = CONFIG_FOLDER + "token.txt";
+
+    public const string CONFIG_FILE = CONFIG_FOLDER + "config.fds";
+
+    public static readonly string TOKEN = File.ReadAllText(TOKEN_FILE);
 
     public const string POSITIVE_PREFIX = "+> ";
 
@@ -26,6 +33,10 @@ public class FreneticDiscordBot
     public const string TODO_PREFIX = NEGATIVE_PREFIX + "// TODO: ";
 
     public static string[] Quotes = File.ReadAllText("./quotes.txt").Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n\n", ((char)0x01).ToString()).Split((char)0x01);
+
+    public FDSSection ConfigFile;
+
+    public Object ConfigLock = new Object();
 
     public DiscordSocketClient client;
 
@@ -156,17 +167,29 @@ public class FreneticDiscordBot
     }
 
     public static string CmdsHelp = 
-            "`help`, `quote`, `hello`, `restart`, `listeninto`, `frenetic`, `whois`, "
+            "`help`, `quote`, `hello`, `frenetic`, `whois`, "
+            + "...";
+
+    public static string CmdsAdminHelp =
+            "`restart`, `listeninto`, `redirectnotice`, "
             + "...";
 
     void CMD_Help(string[] cmds, SocketMessage message)
     {
+        if (IsBotCommander(message.Author))
+        {
+            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Available Commands:\n" + CmdsHelp
+                    + "\nAvailable admin commands: " + CmdsAdminHelp).Wait();
+        }
+        else
+        {
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Available Commands:\n" + CmdsHelp).Wait();
+        }
     }
 
     void CMD_Hello(string[] cmds, SocketMessage message)
     {
-            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Hi! I'm a bot! Find my source code at https://github.com/FreneticLLC/FreneticDiscordBot").Wait();
+        message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Hi! I'm a bot! Find my source code at https://github.com/FreneticLLC/FreneticDiscordBot").Wait();
     }
 
     void CMD_SelfInfo(string[] cmds, SocketMessage message)
@@ -285,7 +308,8 @@ public class FreneticDiscordBot
             message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! That's not for you!").Wait();
             return;
         }
-        KnownServer ks = ServersConfig.GetOrAdd((message.Channel as IGuildChannel).Id, (id) => new KnownServer());
+        ulong serverId = (message.Channel as IGuildChannel).Guild.Id;
+        KnownServer ks = ServersConfig.GetOrAdd(serverId, (id) => new KnownServer());
         if (cmds.Length == 0)
         {
             message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! Consult documentation!").Wait();
@@ -310,7 +334,61 @@ public class FreneticDiscordBot
         {
             message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Listening into: " + goal).Wait();
         }
-        ks.AllChannelsTo = goal;
+        lock (ConfigLock)
+        {
+            ks.AllChannelsTo = goal;
+            ConfigFile.Set("servers." + serverId + ".all_channels_to", goal);
+        }
+        SaveChannelConfig();
+    }
+
+    void CMD_RedirectNotice(string[] cmds, SocketMessage message)
+    {
+        if (!IsBotCommander(message.Author))
+        {
+            message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! That's not for you!").Wait();
+            return;
+        }
+        ulong serverId = (message.Channel as IGuildChannel).Guild.Id;
+        ulong channelId = message.Channel.Id;
+        KnownServer ks = ServersConfig.GetOrAdd(serverId, (id) => new KnownServer());
+        if (cmds.Length == 0)
+        {
+            message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Nope! Consult documentation!").Wait();
+            return;
+        }
+        String goal = cmds[0].ToLowerInvariant();
+        IEnumerable<ITextChannel> channels = (message.Channel as IGuildChannel)
+                .Guild.GetTextChannelsAsync().Result.Where((tc) => tc.Name.ToLowerInvariant().Replace("#", "").Equals(goal));
+        if (channels.Count() == 0)
+        {
+            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Disabling redirect notice.").Wait();
+            IEnumerable<ITextChannel> channels2 = (message.Channel as IGuildChannel).Guild.GetTextChannelsAsync().Result;
+            StringBuilder sbRes = new StringBuilder();
+            foreach (ITextChannel itc in channels2)
+            {
+                sbRes.Append("`").Append(itc.Name).Append("`, ");
+            }
+            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Given: `" + goal + "`, Available: " + sbRes.ToString()).Wait();
+            goal = null;
+        }
+        else
+        {
+            message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Notifying redirect to: " + goal).Wait();
+        }
+        lock (ConfigLock)
+        {
+            if (goal == null)
+            {
+                ks.ChannelRedirectNotices.Remove(channelId);
+            }
+            else
+            {
+                ulong dest = channels.First().Id;
+                ks.ChannelRedirectNotices[channelId] = new ChannelRedirectNotice() { RedirectToChannel = dest };
+                ConfigFile.Set("servers." + serverId + "." + channelId, dest);
+            }
+        }
         SaveChannelConfig();
     }
     
@@ -318,17 +396,7 @@ public class FreneticDiscordBot
     {
         lock (reSaveLock)
         {
-            Directory.CreateDirectory("./config/");
-            StringBuilder sb = new StringBuilder();
-            foreach (KeyValuePair<ulong, KnownServer> ksEnt in ServersConfig)
-            {
-                sb.Append(ksEnt.Key).Append("\n");
-                if (ksEnt.Value.AllChannelsTo != null)
-                {
-                    sb.Append("\tall_channels_to:").Append(ksEnt.Value.AllChannelsTo).Append("\n");
-                }
-            }
-            File.WriteAllText("./config/config.txt", sb.ToString());
+            ConfigFile.SaveToFile(CONFIG_FILE);
         }
     }
 
@@ -336,6 +404,7 @@ public class FreneticDiscordBot
 
     void DefaultCommands()
     {
+        // Various
         CommonCmds["quotes"] = CMD_ShowQuote;
         CommonCmds["quote"] = CMD_ShowQuote;
         CommonCmds["q"] = CMD_ShowQuote;
@@ -373,7 +442,9 @@ public class FreneticDiscordBot
         CommonCmds["userprofile"] = CMD_SelfInfo;
         CommonCmds["profile"] = CMD_SelfInfo;
         CommonCmds["prof"] = CMD_SelfInfo;
+        // Admin
         CommonCmds["listeninto"] = CMD_ListenInto;
+        CommonCmds["redirectnotice"] = CMD_RedirectNotice;
     }
 
     public ConcurrentDictionary<ulong, KnownServer> ServersConfig = new ConcurrentDictionary<ulong, KnownServer>();
@@ -393,32 +464,30 @@ public class FreneticDiscordBot
     {
         Console.WriteLine("Preparing...");
         DefaultCommands();
-        if (File.Exists("./config/config.txt"))
+        if (File.Exists(CONFIG_FILE))
         {
-            string fileDat = File.ReadAllText("./config/config.txt").Replace("\r", "");
-            if (fileDat.Replace("\n", "").Length > 0)
+            ConfigFile = FDSUtility.ReadFile(CONFIG_FILE);
+            FDSSection serversListSection = ConfigFile.GetSection("servers");
+            foreach (string serverIdKey in serversListSection.GetRootKeys())
             {
-                string[] fdata = fileDat.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                for (int i = 0; i < fdata.Length; i++)
+                ulong serverId = ulong.Parse(serverIdKey);
+                KnownServer serverObj = new KnownServer();
+                ServersConfig[serverId] = serverObj;
+                FDSSection serverSection = serversListSection.GetSection(serverIdKey);
+                if (serverSection.HasKey("all_channels_to"))
                 {
-                    string ln = fdata[i];
-                    ulong ul = ulong.Parse(ln);
-                    KnownServer ks = new KnownServer();
-                    ServersConfig[ul] = ks;
-                    int x;
-                    for (x = i + 1; x < fdata.Length; x++)
+                    string serverAllChannelsTo = serverSection.GetString("all_channels_to");
+                    serverObj.AllChannelsTo = serverAllChannelsTo;
+                }
+                if (serverSection.HasKey("channel_redirect_notices"))
+                {
+                    FDSSection channelRedirectListSection = serverSection.GetSection("channel_redirect_notices");
+                    foreach (string channelRedirectIdKey in channelRedirectListSection.GetRootKeys())
                     {
-                        if (!fdata[x].StartsWith(" ") && !fdata[x].StartsWith("\t"))
-                        {
-                            break;
-                        }
-                        string[] cln = fdata[x].Trim().Split(new char[] { ':' }, 2);
-                        if (cln[0].ToLowerInvariant() == "all_channels_to")
-                        {
-                            ks.AllChannelsTo = cln[1];
-                        }
+                        ulong channelSource = ulong.Parse(channelRedirectIdKey);
+                        ulong channelTarget = channelRedirectListSection.GetUlong(channelRedirectIdKey).Value;
+                        serverObj.ChannelRedirectNotices[channelSource] = new ChannelRedirectNotice() { RedirectToChannel = channelTarget };
                     }
-                    i = x;
                 }
             }
         }
@@ -463,13 +532,26 @@ public class FreneticDiscordBot
             {
                 return Task.CompletedTask;
             }
-            if (message.Channel.Name.StartsWith("@") || !(message.Channel is SocketGuildChannel))
+            if (message.Channel.Name.StartsWith("@") || !(message.Channel is SocketGuildChannel sgc))
             {
                 Console.WriteLine("Refused message from (" + message.Author.Username + "): (Invalid Channel: " + message.Channel.Name + "): " + message.Content);
                 return Task.CompletedTask;
             }
             bool mentionedMe = message.MentionedUsers.Any((su) => su.Id == client.CurrentUser.Id);
             Console.WriteLine("Parsing message from (" + message.Author.Username + "), in channel: " + message.Channel.Name + ": " + message.Content);
+            if (ServersConfig.TryGetValue(sgc.Guild.Id, out KnownServer serverSettings))
+            {
+                if (serverSettings.ChannelRedirectNotices.TryGetValue(message.Channel.Id, out ChannelRedirectNotice notice))
+                {
+                    if (!notice.UserLastNotices.TryGetValue(message.Author.Id, out DateTimeOffset dto)
+                        || DateTimeOffset.UtcNow.Subtract(dto).TotalMinutes > 10.0)
+                    {
+                        notice.UserLastNotices[message.Author.Id] = DateTimeOffset.UtcNow;
+                        Console.WriteLine("Telling user to post in redirect target instead of here.");
+                        message.Channel.SendMessageAsync(NEGATIVE_PREFIX + "Please post in <#" + notice.RedirectToChannel + "> not here.").Wait();
+                    }
+                }
+            }
             if (mentionedMe)
             {
                 try
@@ -720,8 +802,17 @@ public class FreneticDiscordBot
         }
     }
 
+    public class ChannelRedirectNotice
+    {
+        public ulong RedirectToChannel;
+
+        public ConcurrentDictionary<ulong, DateTimeOffset> UserLastNotices = new ConcurrentDictionary<ulong, DateTimeOffset>();
+    }
+
     public class KnownServer
     {
         public string AllChannelsTo = null;
+
+        public Dictionary<ulong, ChannelRedirectNotice> ChannelRedirectNotices = new Dictionary<ulong, ChannelRedirectNotice>();
     }
 }
