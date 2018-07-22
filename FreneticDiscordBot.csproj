@@ -2,8 +2,14 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <RootNamespace>FreneticDiscordBot</RootNamespace>
+    <AssemblyName>FreneticDiscordBot</AssemblyName>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <LangVersion>Latest</LangVersion>
+    <Company>Frenetic LLC</Company>
+    <Product>FreneticDiscordBot</Product>
+    <PackageId>FreneticDiscordBot</PackageId>
+    <Copyright>Copyright (C) Frenetic LLC 2017-2018</Copyright>
   </PropertyGroup>
   <ItemGroup>
     <None Include="NuGet.config" />
