@@ -386,7 +386,7 @@ public class FreneticDiscordBot
             {
                 ulong dest = channels.First().Id;
                 ks.ChannelRedirectNotices[channelId] = new ChannelRedirectNotice() { RedirectToChannel = dest };
-                ConfigFile.Set("servers." + serverId + "." + channelId, dest);
+                ConfigFile.Set("servers." + serverId + ".channel_redirect_notices." + channelId, dest);
             }
         }
         SaveChannelConfig();
