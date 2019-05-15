@@ -4,12 +4,12 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>FreneticDiscordBot</RootNamespace>
     <AssemblyName>FreneticDiscordBot</AssemblyName>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <LangVersion>Latest</LangVersion>
     <Company>Frenetic LLC</Company>
     <Product>FreneticDiscordBot</Product>
     <PackageId>FreneticDiscordBot</PackageId>
-    <Copyright>Copyright (C) Frenetic LLC 2017-2018</Copyright>
+    <Copyright>Copyright (C) Frenetic LLC 2017-2019</Copyright>
   </PropertyGroup>
   <ItemGroup>
     <None Include="NuGet.config" />
@@ -18,8 +18,8 @@
     <EmbeddedResource Include="**\*.resx" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="2.0.0-beta" />
-    <PackageReference Include="Discord.Net.WebSocket" Version="2.0.0-beta" />
+    <PackageReference Include="Discord.Net" Version="2.0.1" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="2.0.1" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="FreneticUtilities\*.*" />
