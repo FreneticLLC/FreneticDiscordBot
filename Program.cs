@@ -203,6 +203,10 @@ public class FreneticDiscordBot
                 break;
             }
         }
+        if (cmds.Length > 0 && ulong.TryParse(cmds[0], out ulong userId))
+        {
+            user = client.GetUser(userId) ?? user;
+        }
         EmbedBuilder bed = new EmbedBuilder();
         EmbedAuthorBuilder auth = new EmbedAuthorBuilder();
         auth.Name = user.Username + "#" + user.Discriminator;
