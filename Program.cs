@@ -208,10 +208,12 @@ public class FreneticDiscordBot
             user = client.GetUser(userId) ?? user;
         }
         EmbedBuilder bed = new EmbedBuilder();
-        EmbedAuthorBuilder auth = new EmbedAuthorBuilder();
-        auth.Name = user.Username + "#" + user.Discriminator;
-        auth.IconUrl = user.GetAvatarUrl();
-        auth.Url = user.GetAvatarUrl();
+        EmbedAuthorBuilder auth = new EmbedAuthorBuilder
+        {
+            Name = user.Username + "#" + user.Discriminator,
+            IconUrl = user.GetAvatarUrl(),
+            Url = user.GetAvatarUrl()
+        };
         bed.Author = auth;
         bed.Color = new Color(0xC8, 0x74, 0x4B);
         bed.Title = "Who is " + auth.Name + "?";
@@ -291,10 +293,12 @@ public class FreneticDiscordBot
     void CMD_WhatIsFrenetic(string[] cmds, SocketMessage message)
     {
         EmbedBuilder bed = new EmbedBuilder();
-        EmbedAuthorBuilder auth = new EmbedAuthorBuilder();
-        auth.Name = "Frenetic LLC";
-        auth.IconUrl = client.CurrentUser.GetAvatarUrl();
-        auth.Url = "https://freneticllc.com";
+        EmbedAuthorBuilder auth = new EmbedAuthorBuilder
+        {
+            Name = "Frenetic LLC",
+            IconUrl = client.CurrentUser.GetAvatarUrl(),
+            Url = "https://freneticllc.com"
+        };
         bed.Author = auth;
         bed.Color = new Color(0xC8, 0x74, 0x4B);
         bed.Title = "What is Frenetic LLC?";
@@ -496,8 +500,10 @@ public class FreneticDiscordBot
             }
         }
         Console.WriteLine("Loading Discord...");
-        DiscordSocketConfig config = new DiscordSocketConfig();
-        config.MessageCacheSize = 256;
+        DiscordSocketConfig config = new DiscordSocketConfig
+        {
+            MessageCacheSize = 256
+        };
         client = new DiscordSocketClient(config);
         client.Ready += () =>
         {
