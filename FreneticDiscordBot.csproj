@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>FreneticDiscordBot</RootNamespace>
     <AssemblyName>FreneticDiscordBot</AssemblyName>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <LangVersion>Latest</LangVersion>
     <Company>Frenetic LLC</Company>
     <Product>FreneticDiscordBot</Product>
@@ -18,8 +18,8 @@
     <EmbeddedResource Include="**\*.resx" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="2.4.0" />
-    <PackageReference Include="Discord.Net.WebSocket" Version="2.4.0" />
+    <PackageReference Include="Discord.Net" Version="3.1.0" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="3.1.0" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="FreneticUtilities\*.*" />

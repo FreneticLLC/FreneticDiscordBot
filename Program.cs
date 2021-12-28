@@ -12,6 +12,7 @@ using Discord.WebSocket;
 using System.Diagnostics;
 using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticToolkit;
+using FreneticUtilities.FreneticExtensions;
 
 namespace FreneticDiscordBot
 {
@@ -19,7 +20,7 @@ namespace FreneticDiscordBot
     {
         // TODO: Clean and/or rewrite? This static-abusing mess is very lazy. This isn't even in a namespace.
 
-        public Random random = new Random();
+        public Random random = new();
 
         public const string CONFIG_FOLDER = "./config/";
 
@@ -39,18 +40,18 @@ namespace FreneticDiscordBot
 
         public FDSSection ConfigFile;
 
-        public LockObject ConfigLock = new LockObject();
+        public LockObject ConfigLock = new();
 
         public DiscordSocketClient client;
 
         public void Respond(SocketMessage message)
         {
             string[] mesdat = message.Content.Split(' ');
-            StringBuilder resBuild = new StringBuilder(message.Content.Length);
-            List<string> cmds = new List<string>();
+            StringBuilder resBuild = new(message.Content.Length);
+            List<string> cmds = new();
             for (int i = 0; i < mesdat.Length; i++)
             {
-                if (mesdat[i].Contains("<") && mesdat[i].Contains(">"))
+                if (mesdat[i].Contains('<') && mesdat[i].Contains('>'))
                 {
                     continue;
                 }
@@ -79,7 +80,7 @@ namespace FreneticDiscordBot
             }
         }
 
-        public Dictionary<string, Action<string[], SocketMessage>> CommonCmds = new Dictionary<string, Action<string[], SocketMessage>>(1024);
+        public Dictionary<string, Action<string[], SocketMessage>> CommonCmds = new(1024);
 
         public class QuoteSeen
         {
@@ -88,7 +89,7 @@ namespace FreneticDiscordBot
             public DateTime Time;
         }
 
-        public List<QuoteSeen> QuotesSeen = new List<QuoteSeen>();
+        public List<QuoteSeen> QuotesSeen = new();
 
         public bool QuoteWasSeen(int qid)
         {
@@ -137,7 +138,7 @@ namespace FreneticDiscordBot
             }
             else
             {
-                List<int> spots = new List<int>();
+                List<int> spots = new();
                 string input_opt = string.Join(" ", cmds);
                 for (int i = 0; i < Quotes.Length; i++)
                 {
@@ -210,8 +211,8 @@ namespace FreneticDiscordBot
             {
                 user = client.GetUser(userId) ?? user;
             }
-            EmbedBuilder bed = new EmbedBuilder();
-            EmbedAuthorBuilder auth = new EmbedAuthorBuilder
+            EmbedBuilder bed = new();
+            EmbedAuthorBuilder auth = new()
             {
                 Name = user.Username + "#" + user.Discriminator,
                 IconUrl = user.GetAvatarUrl(),
@@ -224,7 +225,7 @@ namespace FreneticDiscordBot
             bed.AddField((efb) => efb.WithName("Discord ID").WithValue(user.Id));
             bed.AddField((efb) => efb.WithName("Discord Join Date").WithValue(FormatDT(user.CreatedAt)));
             bed.AddField((efb) => efb.WithName("Current Status").WithValue(user.Status));
-            bed.AddField((efb) => efb.WithName("Current Activity").WithValue(user.Activity == null ? "Nothing." : (user.Activity.Type + ": " + user.Activity.Name)));
+            bed.AddField((efb) => efb.WithName("Current Activity").WithValue(user.Activities.IsEmpty() ? "Nothing." : (user.Activities.First().Type + ": " + user.Activities.First().Name)));
             if (user is SocketGuildUser iguser)
             {
                 if (iguser.JoinedAt.HasValue)
@@ -295,8 +296,8 @@ namespace FreneticDiscordBot
 
         void CMD_WhatIsFrenetic(string[] cmds, SocketMessage message)
         {
-            EmbedBuilder bed = new EmbedBuilder();
-            EmbedAuthorBuilder auth = new EmbedAuthorBuilder
+            EmbedBuilder bed = new();
+            EmbedAuthorBuilder auth = new()
             {
                 Name = "Frenetic LLC",
                 IconUrl = client.CurrentUser.GetAvatarUrl(),
@@ -333,7 +334,7 @@ namespace FreneticDiscordBot
             {
                 message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Disabling sending.").Wait();
                 IEnumerable<ITextChannel> channels2 = (message.Channel as IGuildChannel).Guild.GetTextChannelsAsync().Result;
-                StringBuilder sbRes = new StringBuilder();
+                StringBuilder sbRes = new();
                 foreach (ITextChannel itc in channels2)
                 {
                     sbRes.Append('`').Append(itc.Name).Append("`, ");
@@ -375,7 +376,7 @@ namespace FreneticDiscordBot
             {
                 message.Channel.SendMessageAsync(POSITIVE_PREFIX + "Disabling redirect notice.").Wait();
                 IEnumerable<ITextChannel> channels2 = (message.Channel as IGuildChannel).Guild.GetTextChannelsAsync().Result;
-                StringBuilder sbRes = new StringBuilder();
+                StringBuilder sbRes = new();
                 foreach (ITextChannel itc in channels2)
                 {
                     sbRes.Append('`').Append(itc.Name).Append("`, ");
@@ -411,7 +412,7 @@ namespace FreneticDiscordBot
             }
         }
 
-        public static Object reSaveLock = new Object();
+        public static LockObject reSaveLock = new();
 
         void DefaultCommands()
         {
@@ -458,7 +459,7 @@ namespace FreneticDiscordBot
             CommonCmds["redirectnotice"] = CMD_RedirectNotice;
         }
 
-        public ConcurrentDictionary<ulong, KnownServer> ServersConfig = new ConcurrentDictionary<ulong, KnownServer>();
+        public ConcurrentDictionary<ulong, KnownServer> ServersConfig = new();
 
         public bool ConnectedOnce = false;
 
@@ -482,7 +483,7 @@ namespace FreneticDiscordBot
                 foreach (string serverIdKey in serversListSection.GetRootKeys())
                 {
                     ulong serverId = ulong.Parse(serverIdKey);
-                    KnownServer serverObj = new KnownServer();
+                    KnownServer serverObj = new();
                     ServersConfig[serverId] = serverObj;
                     FDSSection serverSection = serversListSection.GetSection(serverIdKey);
                     if (serverSection.HasKey("all_channels_to"))
@@ -503,7 +504,7 @@ namespace FreneticDiscordBot
                 }
             }
             Console.WriteLine("Loading Discord...");
-            DiscordSocketConfig config = new DiscordSocketConfig
+            DiscordSocketConfig config = new()
             {
                 MessageCacheSize = 256
             };
@@ -597,7 +598,7 @@ namespace FreneticDiscordBot
                     return Task.CompletedTask;
                 }
                 Console.WriteLine("A message was deleted!");
-                if (c is not IGuildChannel channel)
+                if (c.GetOrDownloadAsync().Result is not IGuildChannel channel)
                 {
                     Console.WriteLine("But it was in a weird channel?");
                     return Task.CompletedTask;
@@ -623,7 +624,7 @@ namespace FreneticDiscordBot
                 if (!m.HasValue)
                 {
                     Console.WriteLine("But I don't see its data... Outputting a blankness note.");
-                    outputter.SendMessageAsync(POSITIVE_PREFIX + "Message in `" + c.Name + "` with id `" + c.Id + "` deleted. Specific content not known (likely an old message).").Wait();
+                    outputter.SendMessageAsync(POSITIVE_PREFIX + "Message in `" + channel.Name + "` with id `" + c.Id + "` deleted. Specific content not known (likely an old message).").Wait();
                     return Task.CompletedTask;
                 }
                 else
@@ -752,7 +753,7 @@ namespace FreneticDiscordBot
             }
         }
 
-        public TimeSpan MonitorLoopTime = new TimeSpan(hours: 0, minutes: 1, seconds: 0);
+        public TimeSpan MonitorLoopTime = new(hours: 0, minutes: 1, seconds: 0);
 
         public bool MonitorWasFailedAlready = false;
 
@@ -771,7 +772,7 @@ namespace FreneticDiscordBot
             CurrentBot = new FreneticDiscordBot(Array.Empty<string>());
         }
 
-        public Object MonitorLock = new Object();
+        public LockObject MonitorLock = new();
 
         public long LoopsSilent = 0;
 
@@ -819,14 +820,14 @@ namespace FreneticDiscordBot
         {
             public ulong RedirectToChannel;
 
-            public ConcurrentDictionary<ulong, DateTimeOffset> UserLastNotices = new ConcurrentDictionary<ulong, DateTimeOffset>();
+            public ConcurrentDictionary<ulong, DateTimeOffset> UserLastNotices = new();
         }
 
         public class KnownServer
         {
             public string AllChannelsTo = null;
 
-            public Dictionary<ulong, ChannelRedirectNotice> ChannelRedirectNotices = new Dictionary<ulong, ChannelRedirectNotice>();
+            public Dictionary<ulong, ChannelRedirectNotice> ChannelRedirectNotices = new();
         }
     }
 }
