@@ -508,6 +508,7 @@ namespace FreneticDiscordBot
             {
                 MessageCacheSize = 256
             };
+            config.GatewayIntents |= GatewayIntents.MessageContent;
             client = new DiscordSocketClient(config);
             client.Ready += () =>
             {
