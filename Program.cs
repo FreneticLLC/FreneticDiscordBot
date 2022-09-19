@@ -18,7 +18,7 @@ namespace FreneticDiscordBot
 {
     public class FreneticDiscordBot
     {
-        // TODO: Clean and/or rewrite? This static-abusing mess is very lazy. This isn't even in a namespace.
+        // TODO: Clean and/or rewrite? This static-abusing mess is very lazy.
 
         public Random random = new();
 
