@@ -57,6 +57,8 @@ public class RoleBouncer
                 await Task.Delay(TimeSpan.FromSeconds(3));
                 SocketGuild mainGuild = client.GetGuild(MainServerID);
                 await mainGuild.DownloadUsersAsync();
+                SocketGuild copyGuild = Client.GetGuild(CopyServerID);
+                await copyGuild.DownloadUsersAsync();
                 Console.WriteLine($"[RoleBouncer Debug] Ready, checking {mainGuild.Users.Count} users...");
                 foreach (SocketGuildUser user in mainGuild.Users)
                 {
@@ -109,7 +111,7 @@ public class RoleBouncer
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Role bouncer Recheck error: {ex}");
+            Console.WriteLine($"Role bouncer Recheck error while updating user {user.Id}: {ex}");
         }
     }
 }
