@@ -510,7 +510,7 @@ namespace FreneticDiscordBot
             {
                 MessageCacheSize = 256
             };
-            config.GatewayIntents |= GatewayIntents.MessageContent;
+            config.GatewayIntents |= GatewayIntents.MessageContent | GatewayIntents.GuildMembers;
             client = new DiscordSocketClient(config);
             FDSSection bouncerSection = ConfigFile.GetSection("bouncer");
             if (bouncerSection is not null)
