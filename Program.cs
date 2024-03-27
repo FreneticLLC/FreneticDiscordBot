@@ -48,7 +48,7 @@ namespace FreneticDiscordBot
         {
             string[] mesdat = message.Content.Split(' ');
             StringBuilder resBuild = new(message.Content.Length);
-            List<string> cmds = new();
+            List<string> cmds = [];
             for (int i = 0; i < mesdat.Length; i++)
             {
                 if (mesdat[i].Contains('<') && mesdat[i].Contains('>'))
@@ -72,7 +72,7 @@ namespace FreneticDiscordBot
             cmds.RemoveAt(0);
             if (CommonCmds.TryGetValue(lowCmd, out Action<string[], SocketMessage> acto))
             {
-                acto.Invoke(cmds.ToArray(), message);
+                acto.Invoke([.. cmds], message);
             }
             else
             {
@@ -89,7 +89,7 @@ namespace FreneticDiscordBot
             public DateTime Time;
         }
 
-        public List<QuoteSeen> QuotesSeen = new();
+        public List<QuoteSeen> QuotesSeen = [];
 
         public bool QuoteWasSeen(int qid)
         {
@@ -138,11 +138,11 @@ namespace FreneticDiscordBot
             }
             else
             {
-                List<int> spots = new();
+                List<int> spots = [];
                 string input_opt = string.Join(" ", cmds);
                 for (int i = 0; i < Quotes.Length; i++)
                 {
-                    if (Quotes[i].ToLowerInvariant().Contains(input_opt.ToLowerInvariant()))
+                    if (Quotes[i].ToLowerFast().Contains(input_opt.ToLowerFast()))
                     {
                         spots.Add(i);
                     }
@@ -245,7 +245,7 @@ namespace FreneticDiscordBot
 
         public static bool IsBotCommander(SocketUser usr)
         {
-            return (usr as SocketGuildUser).Roles.Where((role) => role.Name.ToLowerInvariant() == "botcommander").FirstOrDefault() != null;
+            return (usr as SocketGuildUser).Roles.Where((role) => role.Name.ToLowerFast() == "botcommander").FirstOrDefault() != null;
         }
 
         void CMD_Restart(string[] cmds, SocketMessage message)
@@ -547,7 +547,7 @@ namespace FreneticDiscordBot
                 {
                     return Task.CompletedTask;
                 }
-                if (message.Channel.Name.StartsWith("@") || message.Channel is not SocketGuildChannel sgc)
+                if (message.Channel.Name.StartsWith('@') || message.Channel is not SocketGuildChannel sgc)
                 {
                     Console.WriteLine("Refused message from (" + message.Author.Username + "): (Invalid Channel: " + message.Channel.Name + "): " + message.Content);
                     return Task.CompletedTask;
@@ -744,7 +744,7 @@ namespace FreneticDiscordBot
             while (true)
             {
                 string read = Console.ReadLine();
-                string[] dats = read.Split(new char[] { ' ' }, 2);
+                string[] dats = read.Split([' '], 2);
                 string cmd = dats[0].ToLowerInvariant();
                 if (cmd == "quit" || cmd == "stop" || cmd == "exit")
                 {
@@ -770,7 +770,7 @@ namespace FreneticDiscordBot
             {
                 client.StopAsync().Wait();
             });
-            CurrentBot = new FreneticDiscordBot(Array.Empty<string>());
+            CurrentBot = new FreneticDiscordBot([]);
         }
 
         public LockObject MonitorLock = new();
@@ -828,7 +828,7 @@ namespace FreneticDiscordBot
         {
             public string AllChannelsTo = null;
 
-            public Dictionary<ulong, ChannelRedirectNotice> ChannelRedirectNotices = new();
+            public Dictionary<ulong, ChannelRedirectNotice> ChannelRedirectNotices = [];
         }
     }
 }
