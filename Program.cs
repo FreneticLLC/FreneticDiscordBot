@@ -38,11 +38,13 @@ namespace FreneticDiscordBot
 
         public static string[] Quotes = File.ReadAllText("./quotes.txt").Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n\n", ((char)0x01).ToString()).Split((char)0x01);
 
-        public FDSSection ConfigFile;
+        public FDSSection ConfigFile = new();
 
         public LockObject ConfigLock = new();
 
         public DiscordSocketClient client;
+
+        public RoleBouncer Role_Bouncer;
 
         public void Respond(SocketMessage message)
         {
@@ -510,6 +512,12 @@ namespace FreneticDiscordBot
             };
             config.GatewayIntents |= GatewayIntents.MessageContent;
             client = new DiscordSocketClient(config);
+            FDSSection bouncerSection = ConfigFile.GetSection("bouncer");
+            if (bouncerSection is not null)
+            {
+                Role_Bouncer = new();
+                Role_Bouncer.Init(bouncerSection, client);
+            }
             client.Ready += () =>
             {
                 if (StopAllLogic)
