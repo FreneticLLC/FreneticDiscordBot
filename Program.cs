@@ -525,6 +525,7 @@ namespace FreneticDiscordBot
                 {
                     return Task.CompletedTask;
                 }
+                Console.WriteLine($"Bot is in guilds:\n{client.Guilds.Select(g => $"{g.Id}: {g.Name}").JoinString("\n")}");
                 ConnectedCurrently = true;
                 client.SetGameAsync("https://freneticllc.com").Wait();
                 if (ConnectedOnce)

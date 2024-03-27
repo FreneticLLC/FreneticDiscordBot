@@ -28,22 +28,22 @@ public class RoleBouncer
         {
             RoleMap[ulong.Parse(key)] = mapSection.GetUlong(key).Value;
         }
-        client.UserUpdated += async (old_user, new_user) =>
+        client.GuildMemberUpdated += async (old_user, new_user) =>
         {
             try
             {
                 Console.WriteLine($"[RoleBouncer Debug] User updated: {new_user.Id}");
-                if (old_user is not SocketGuildUser old_guild_user || new_user is not SocketGuildUser new_guild_user || old_guild_user.Guild.Id != MainServerID)
+                if (!old_user.HasValue || old_user.Value.Guild.Id != MainServerID)
                 {
-                    Console.WriteLine($"[RoleBouncer Debug] User updated not in main server or not properly guild: {new_user.Id}");
+                    Console.WriteLine($"[RoleBouncer Debug] User updated not in main server or not cached: {new_user.Id}");
                     return;
                 }
-                if (old_guild_user.Roles.Select(r => r.Id).JoinString(",") == new_guild_user.Roles.Select(r => r.Id).JoinString(","))
+                if (old_user.Value.Roles.Select(r => r.Id).JoinString(",") == new_user.Roles.Select(r => r.Id).JoinString(","))
                 {
                     Console.WriteLine($"[RoleBouncer Debug] User updated roles match: {new_user.Id}");
                     return;
                 }
-                _ = Task.Run(async () => await RecheckUser(new_guild_user));
+                _ = Task.Run(async () => await RecheckUser(new_user));
             }
             catch (Exception ex)
             {
