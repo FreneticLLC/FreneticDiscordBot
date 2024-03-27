@@ -88,7 +88,7 @@ public class RoleBouncer
             ulong[] mainRoleIds = [.. mainUser.Roles.Select(r => r.Id).Order()];
             ulong[] copyRoleIds = [.. copyUser.Roles.Select(r => r.Id).Order()];
             string origCopyRoles = copyRoleIds.JoinString(",");
-            List<ulong> newRoles = copyRoleIds.Except(RoleMap.Values).ToList();
+            HashSet<ulong> newRoles = copyRoleIds.Except(RoleMap.Values).ToHashSet();
             foreach ((ulong mainId, ulong copyId) in RoleMap)
             {
                 if (mainRoleIds.Contains(mainId))
