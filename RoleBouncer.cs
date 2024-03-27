@@ -32,12 +32,15 @@ public class RoleBouncer
         {
             try
             {
+                Console.WriteLine($"[RoleBouncer Debug] User updated: {new_user.Id}");
                 if (old_user is not SocketGuildUser old_guild_user || new_user is not SocketGuildUser new_guild_user || old_guild_user.Guild.Id != MainServerID)
                 {
+                    Console.WriteLine($"[RoleBouncer Debug] User updated not in main server or not properly guild: {new_user.Id}");
                     return;
                 }
                 if (old_guild_user.Roles.Select(r => r.Id).JoinString(",") == new_guild_user.Roles.Select(r => r.Id).JoinString(","))
                 {
+                    Console.WriteLine($"[RoleBouncer Debug] User updated roles match: {new_user.Id}");
                     return;
                 }
                 _ = Task.Run(async () => await RecheckUser(new_guild_user));
@@ -54,10 +57,12 @@ public class RoleBouncer
                 await Task.Delay(TimeSpan.FromSeconds(3));
                 SocketGuild mainGuild = client.GetGuild(MainServerID);
                 await mainGuild.DownloadUsersAsync();
+                Console.WriteLine($"[RoleBouncer Debug] Ready, checking {mainGuild.Users.Count} users...");
                 foreach (SocketGuildUser user in mainGuild.Users)
                 {
                     await RecheckUser(user);
                 }
+                Console.WriteLine($"[RoleBouncer Debug] Ready complete.");
             }
             catch (Exception ex)
             {
@@ -75,11 +80,13 @@ public class RoleBouncer
             SocketGuildUser copyUser = copyGuild.GetUser(user.Id);
             if (mainUser is null || copyUser is null)
             {
+                Console.WriteLine($"[RoleBouncer Debug] User not found in one or both guilds: {user.Id}");
                 return;
             }
             ulong[] mainRoleIds = [.. mainUser.Roles.Select(r => r.Id).Order()];
-            string roles = mainRoleIds.JoinString(",");
-            List<ulong> newRoles = mainRoleIds.Except(RoleMap.Values).ToList();
+            ulong[] copyRoleIds = [.. copyUser.Roles.Select(r => r.Id).Order()];
+            string origCopyRoles = copyRoleIds.JoinString(",");
+            List<ulong> newRoles = copyRoleIds.Except(RoleMap.Values).ToList();
             foreach ((ulong mainId, ulong copyId) in RoleMap)
             {
                 if (mainRoleIds.Contains(mainId))
@@ -89,10 +96,12 @@ public class RoleBouncer
             }
             ulong[] newRoleIds = [.. newRoles.Order()];
             string newRolesStr = newRoleIds.JoinString(",");
-            if (roles == newRolesStr)
+            if (origCopyRoles == newRolesStr)
             {
+                Console.WriteLine($"[RoleBouncer Debug] User roles match: {user.Id}");
                 return;
             }
+            Console.WriteLine($"[RoleBouncer Debug] User roles do not match, updating: {user.Id}");
             await copyUser.ModifyAsync((props) =>
             {
                 props.Roles = newRoleIds.Select(id => copyGuild.GetRole(id)).ToList();
