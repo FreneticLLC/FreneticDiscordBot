@@ -46,6 +46,8 @@ namespace FreneticDiscordBot
 
         public RoleBouncer Role_Bouncer;
 
+        public GuildEveryoneRole Guild_Everyone_Role;
+
         public void Respond(SocketMessage message)
         {
             string[] mesdat = message.Content.Split(' ');
@@ -518,6 +520,12 @@ namespace FreneticDiscordBot
             {
                 Role_Bouncer = new();
                 Role_Bouncer.Init(bouncerSection, client);
+            }
+            FDSSection guildEveryoneSection = ConfigFile.GetSection("guild_everyone_role");
+            if (guildEveryoneSection is not null)
+            {
+                Guild_Everyone_Role = new();
+                Guild_Everyone_Role.Init(guildEveryoneSection, client);
             }
             client.Ready += () =>
             {
