@@ -15,6 +15,8 @@ public class RoleBouncer
 
     public Dictionary<ulong, ulong> RoleMap = [];
 
+    public Dictionary<ulong, ulong> GuildToEveryoneRole = [];
+
     public DiscordSocketClient Client;
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
@@ -27,6 +29,11 @@ public class RoleBouncer
         foreach (string key in mapSection.GetRootKeys())
         {
             RoleMap[ulong.Parse(key)] = mapSection.GetUlong(key).Value;
+        }
+        FDSSection guildEveryoneRole = section.GetSection("guild_everyone_role");
+        foreach (string key in guildEveryoneRole.GetRootKeys())
+        {
+            GuildToEveryoneRole[ulong.Parse(key)] = guildEveryoneRole.GetUlong(key).Value;
         }
         client.GuildMemberUpdated += async (old_user, new_user) =>
         {
@@ -50,6 +57,14 @@ public class RoleBouncer
                 Console.WriteLine($"Role bouncer UserUpdated error: {ex}");
             }
         };
+        client.UserJoined += async (user) =>
+        {
+            if (GuildToEveryoneRole.TryGetValue(user.Guild.Id, out ulong everyoneRole))
+            {
+                Console.WriteLine($"[Guild Everyone Role] User joined, adding everyone role: {user.Id}");
+                await user.AddRoleAsync(everyoneRole);
+            }
+        };
         client.Ready += async () =>
         {
             try
@@ -65,6 +80,21 @@ public class RoleBouncer
                     await RecheckUser(user);
                 }
                 Console.WriteLine($"[RoleBouncer Debug] Ready complete.");
+                foreach ((ulong guild, ulong role) in GuildToEveryoneRole)
+                {
+                    SocketGuild g = Client.GetGuild(guild);
+                    await g.DownloadUsersAsync();
+                    Console.WriteLine($"[Guild Everyone Role] checking {g.Users.Count} users...");
+                    foreach (SocketGuildUser user in g.Users)
+                    {
+                        if (!user.Roles.Any(r => r.Id == role))
+                        {
+                            Console.WriteLine($"[Guild Everyone Role] adding role to user: {user.Id}");
+                            await user.AddRoleAsync(g.GetRole(role));
+                        }
+                    }
+                    Console.WriteLine($"[Guild Everyone Role] complete.");
+                }
             }
             catch (Exception ex)
             {
