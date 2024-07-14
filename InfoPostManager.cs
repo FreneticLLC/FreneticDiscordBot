@@ -92,74 +92,81 @@ public class InfoPostManager
 
     public void InitFromGitFolder()
     {
-        Posts ??= [];
-        bool anyNew = false;
-        foreach (string folder in Directory.EnumerateDirectories(GitFolder).Select(f => f.Replace('\\', '/').AfterLast('/')))
+        try
         {
-            if (!ulong.TryParse(folder, out ulong guildId))
+            Posts ??= [];
+            bool anyNew = false;
+            foreach (string folder in Directory.EnumerateDirectories(GitFolder).Select(f => f.Replace('\\', '/').AfterLast('/')))
             {
-                continue;
+                if (!ulong.TryParse(folder, out ulong guildId))
+                {
+                    continue;
+                }
+                SocketGuild guild = Client.GetGuild(guildId);
+                if (guild is null)
+                {
+                    Console.WriteLine($"[InfoPostManager] Guild not found: {guildId}");
+                    continue;
+                }
+                foreach (string file in Directory.EnumerateFiles($"{GitFolder}/{folder}", "*.md").Select(f => f.Replace('\\', '/').AfterLast('/')))
+                {
+                    string channel = file.Before('.');
+                    if (!ulong.TryParse(channel, out ulong channelId))
+                    {
+                        Console.WriteLine($"[InfoPostManager] Invalid channel ID in file name: '{file}'");
+                        continue;
+                    }
+                    SocketTextChannel chan = guild.GetTextChannel(channelId);
+                    if (chan is null)
+                    {
+                        Console.WriteLine($"[InfoPostManager] Channel not found: {guildId}/{channelId}");
+                        continue;
+                    }
+                    string messageText = File.ReadAllText($"{GitFolder}/{folder}/{file}");
+                    string[] messages = messageText.Split("<BREAK>", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                    if (messages.Length == 0)
+                    {
+                        Console.WriteLine($"[InfoPostManager] No messages found in file: {file}");
+                        continue;
+                    }
+                    if (messages.Any(m => m.Length >= 2000))
+                    {
+                        Console.WriteLine($"[InfoPostManager] Message too long in file: {file} - lengths are {messages.Select(m => m.Length).JoinString(", ")}");
+                        continue;
+                    }
+                    if (messages.Length > 25)
+                    {
+                        Console.WriteLine($"[InfoPostManager] Too many messages in file: {file}, has {messages.Length} messages");
+                        continue;
+                    }
+                    InfoPost post = Posts.FirstOrDefault(p => p.GuildID == guildId && p.ChannelID == channelId);
+                    if (post is null)
+                    {
+                        Posts.Add(new InfoPost() { GuildID = guildId, ChannelID = channelId, Messages = messages });
+                        anyNew = true;
+                        continue;
+                    }
+                    if (post.Messages.SequenceEqual(messages))
+                    {
+                        continue;
+                    }
+                    post.Messages = messages;
+                    SendPostNow(chan, post).Wait();
+                    Console.WriteLine($"[InfoPostManager] Updated post for {guildId}/{channelId}");
+                }
             }
-            SocketGuild guild = Client.GetGuild(guildId);
-            if (guild is null)
+            if (Posts.IsEmpty())
             {
-                Console.WriteLine($"[InfoPostManager] Guild not found: {guildId}");
-                continue;
+                Console.WriteLine("[InfoPostManager] No posts found at all! Nothing being maintained.");
             }
-            foreach (string file in Directory.EnumerateFiles($"{GitFolder}/{folder}", "*.md").Select(f => f.Replace('\\', '/').AfterLast('/')))
+            if (anyNew)
             {
-                string channel = file.Before('.');
-                if (!ulong.TryParse(channel, out ulong channelId))
-                {
-                    Console.WriteLine($"[InfoPostManager] Invalid channel ID in file name: '{file}'");
-                    continue;
-                }
-                SocketTextChannel chan = guild.GetTextChannel(channelId);
-                if (chan is null)
-                {
-                    Console.WriteLine($"[InfoPostManager] Channel not found: {guildId}/{channelId}");
-                    continue;
-                }
-                string messageText = File.ReadAllText($"{GitFolder}/{folder}/{file}");
-                string[] messages = messageText.Split("<BREAK>", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-                if (messages.Length == 0)
-                {
-                    Console.WriteLine($"[InfoPostManager] No messages found in file: {file}");
-                    continue;
-                }
-                if (messages.Any(m => m.Length >= 2000))
-                {
-                    Console.WriteLine($"[InfoPostManager] Message too long in file: {file} - lengths are {messages.Select(m => m.Length).JoinString(", ")}");
-                    continue;
-                }
-                if (messages.Length > 25)
-                {
-                    Console.WriteLine($"[InfoPostManager] Too many messages in file: {file}, has {messages.Length} messages");
-                    continue;
-                }
-                InfoPost post = Posts.FirstOrDefault(p => p.GuildID == guildId && p.ChannelID == channelId);
-                if (post is null)
-                {
-                    Posts.Add(new InfoPost() { GuildID = guildId, ChannelID = channelId, Messages = messages });
-                    anyNew = true;
-                    continue;
-                }
-                if (post.Messages.SequenceEqual(messages))
-                {
-                    continue;
-                }
-                post.Messages = messages;
-                SendPostNow(chan, post).Wait();
-                Console.WriteLine($"[InfoPostManager] Updated post for {guildId}/{channelId}");
+                LoadCurrentPosts().Wait();
             }
         }
-        if (Posts.IsEmpty())
+        catch (Exception ex)
         {
-            Console.WriteLine("[InfoPostManager] No posts found at all! Nothing being maintained.");
-        }
-        if (anyNew)
-        {
-            LoadCurrentPosts().Wait();
+            Console.WriteLine($"[InfoPostManager] Exception in InitFromGitFolder: {ex}");
         }
     }
 
