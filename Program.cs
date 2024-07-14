@@ -48,6 +48,10 @@ namespace FreneticDiscordBot
 
         public GuildEveryoneRole Guild_Everyone_Role;
 
+        public InfoPostManager Info_Post_Manager;
+
+        public CancellationTokenSource CancelTok = new();
+
         public void Respond(SocketMessage message)
         {
             string[] mesdat = message.Content.Split(' ');
@@ -527,6 +531,12 @@ namespace FreneticDiscordBot
                 Guild_Everyone_Role = new();
                 Guild_Everyone_Role.Init(guildEveryoneSection, client);
             }
+            FDSSection infoPostSection = ConfigFile.GetSection("info_post_manager");
+            if (infoPostSection is not null)
+            {
+                Info_Post_Manager = new();
+                Info_Post_Manager.Init(infoPostSection, client, this);
+            }
             client.Ready += () =>
             {
                 if (StopAllLogic)
@@ -742,6 +752,7 @@ namespace FreneticDiscordBot
                     }
                     try
                     {
+                        IdleTick?.Invoke();
                         MonitorLoop();
                     }
                     catch (Exception ex)
@@ -766,8 +777,13 @@ namespace FreneticDiscordBot
                 string cmd = dats[0].ToLowerInvariant();
                 if (cmd == "quit" || cmd == "stop" || cmd == "exit")
                 {
+                    CancelTok.Cancel();
                     client.StopAsync().Wait();
                     Environment.Exit(0);
+                }
+                else if (cmd == "infopost" || cmd == "infopostcheck" || cmd == "check")
+                {
+                    Info_Post_Manager?.RunCheck();
                 }
             }
         }
@@ -780,6 +796,7 @@ namespace FreneticDiscordBot
 
         public void ForceRestartBot()
         {
+            CancelTok.Cancel();
             lock (MonitorLock)
             {
                 StopAllLogic = true;
@@ -796,6 +813,8 @@ namespace FreneticDiscordBot
         public long LoopsSilent = 0;
 
         public long LoopsTotal = 0;
+
+        public Action IdleTick;
 
         public void MonitorLoop()
         {
