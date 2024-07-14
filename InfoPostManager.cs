@@ -69,17 +69,24 @@ public class InfoPostManager
 
     public void RunCheck()
     {
-        LastPullTime = Environment.TickCount64;
-        string head = RunGitProcess("rev-parse HEAD", GitFolder);
-        RunGitProcess("pull", GitFolder);
-        string newHead = RunGitProcess("rev-parse HEAD", GitFolder);
-        if (head == newHead)
+        try
         {
-            Console.WriteLine($"[InfoPostManager] Did git pull, no change (head is {head})");
-            return;
+            LastPullTime = Environment.TickCount64;
+            string head = RunGitProcess("rev-parse HEAD", GitFolder);
+            RunGitProcess("pull", GitFolder);
+            string newHead = RunGitProcess("rev-parse HEAD", GitFolder);
+            if (head == newHead)
+            {
+                Console.WriteLine($"[InfoPostManager] Did git pull, no change (head is {head})");
+                return;
+            }
+            Console.WriteLine($"[InfoPostManager] Did git pull, head was {head}, now is {newHead}, will process...");
+            InitFromGitFolder();
         }
-        Console.WriteLine($"[InfoPostManager] Did git pull, head was {head}, now is {newHead}, will process...");
-        InitFromGitFolder();
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[InfoPostManager] Error in RunCheck: {ex}");
+        }
     }
 
     public static string RunGitProcess(string args, string folder)
@@ -197,7 +204,7 @@ public class InfoPostManager
         List<IMessage> existing = await MessagesFor(chan);
         foreach (string msg in post.Messages)
         {
-            await chan.SendMessageAsync(msg);
+            await chan.SendMessageAsync(msg, allowedMentions: AllowedMentions.None);
         }
         foreach (IMessage message in existing)
         {
