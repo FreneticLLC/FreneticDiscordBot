@@ -158,6 +158,7 @@ public class InfoPostManager
                         continue;
                     }
                     post.Messages = messages;
+                    Console.WriteLine($"[InfoPostManager] Post for {post.GuildID}/{post.ChannelID} ({chan.Name}) was modified, reposting...");
                     SendPostNow(chan, post).Wait();
                     Console.WriteLine($"[InfoPostManager] Updated post for {guildId}/{channelId}");
                 }
@@ -232,10 +233,11 @@ public class InfoPostManager
                     existingMessages.Add(message.Content);
                 }
             }
-            if (existingMessages.SequenceEqual(post.Messages))
+            if (existingMessages.SequenceEqual(post.Messages) || existingMessages.AsEnumerable().Reverse().SequenceEqual(post.Messages))
             {
                 continue;
             }
+            Console.WriteLine($"[InfoPostManager] Post for {post.GuildID}/{post.ChannelID} ({chan.Name}) is out of date in LoadCurrentPosts, reposting...");
             await SendPostNow(chan, post);
         }
     }
