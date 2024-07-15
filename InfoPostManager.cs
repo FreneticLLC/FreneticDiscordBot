@@ -99,6 +99,7 @@ public class InfoPostManager
 
     public void InitFromGitFolder()
     {
+        Console.WriteLine("[InfoPostManager] Doing init...");
         try
         {
             Posts ??= [];

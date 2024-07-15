@@ -478,6 +478,26 @@ namespace FreneticDiscordBot
         static void Main(string[] args)
         {
             CurrentBot = new FreneticDiscordBot(args);
+            while (true)
+            {
+                string read = Console.ReadLine();
+                string[] dats = read.Split([' '], 2);
+                string cmd = dats[0].ToLowerInvariant();
+                if (cmd == "quit" || cmd == "stop" || cmd == "exit")
+                {
+                    CurrentBot.CancelTok.Cancel();
+                    CurrentBot.client.StopAsync().Wait();
+                    Environment.Exit(0);
+                }
+                else if (cmd == "reset")
+                {
+                    CurrentBot.ForceRestartBot();
+                }
+                else if (cmd == "infopost" || cmd == "infopostcheck" || cmd == "check")
+                {
+                    CurrentBot.Info_Post_Manager?.RunCheck();
+                }
+            }
         }
 
         public FreneticDiscordBot(string[] args)
@@ -770,22 +790,6 @@ namespace FreneticDiscordBot
             Console.WriteLine("Connecting to Discord...");
             client.StartAsync().Wait();
             Console.WriteLine("Running Discord!");
-            while (true)
-            {
-                string read = Console.ReadLine();
-                string[] dats = read.Split([' '], 2);
-                string cmd = dats[0].ToLowerInvariant();
-                if (cmd == "quit" || cmd == "stop" || cmd == "exit")
-                {
-                    CancelTok.Cancel();
-                    client.StopAsync().Wait();
-                    Environment.Exit(0);
-                }
-                else if (cmd == "infopost" || cmd == "infopostcheck" || cmd == "check")
-                {
-                    Info_Post_Manager?.RunCheck();
-                }
-            }
         }
 
         public TimeSpan MonitorLoopTime = new(hours: 0, minutes: 1, seconds: 0);
