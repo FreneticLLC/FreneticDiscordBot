@@ -198,7 +198,7 @@ public class InfoPostManager
 
     public static async Task<List<IMessage>> MessagesFor(SocketTextChannel channel)
     {
-        return (await channel.GetMessagesAsync(50).FlattenAsync()).ToList();
+        return [.. (await channel.GetMessagesAsync(50).FlattenAsync())];
     }
 
     public async Task SendPostNow(SocketTextChannel chan, InfoPost post)

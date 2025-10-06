@@ -244,7 +244,7 @@ namespace FreneticDiscordBot
                 {
                     bed.AddField(efb => efb.WithName("Current Nickname").WithValue(iguser.Nickname));
                 }
-                string[] roles = iguser.Roles.Where((r) => !r.IsEveryone).Select((r) => r.Name).ToArray();
+                string[] roles = [.. iguser.Roles.Where((r) => !r.IsEveryone).Select((r) => r.Name)];
                 bed.AddField((efb) => efb.WithName("Current Roles").WithValue(roles.Length > 0 ? string.Join(", ", roles) : "None currently."));
             }
             bed.Footer = new EmbedFooterBuilder().WithIconUrl(client.CurrentUser.GetAvatarUrl()).WithText("Info provided by FreneticDiscordBot, which is Copyright (C) Frenetic LLC");
