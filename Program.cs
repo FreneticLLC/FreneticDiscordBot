@@ -534,7 +534,7 @@ namespace FreneticDiscordBot
             Console.WriteLine("Loading Discord...");
             DiscordSocketConfig config = new()
             {
-                MessageCacheSize = 256,
+                MessageCacheSize = 8,
                 AlwaysDownloadUsers = true,
             };
             config.GatewayIntents |= GatewayIntents.MessageContent | GatewayIntents.GuildMembers;
