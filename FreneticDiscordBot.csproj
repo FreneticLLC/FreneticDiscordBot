@@ -15,8 +15,8 @@
     <EmbeddedResource Include="**\*.resx" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Discord.Net" Version="3.14.1" />
-    <PackageReference Include="Discord.Net.WebSocket" Version="3.14.1" />
-    <PackageReference Include="FreneticLLC.FreneticUtilities" Version="1.0.24" />
+    <PackageReference Include="Discord.Net" Version="3.19.1" />
+    <PackageReference Include="Discord.Net.WebSocket" Version="3.19.1" />
+    <PackageReference Include="FreneticLLC.FreneticUtilities" Version="1.1.6" />
   </ItemGroup>
 </Project>

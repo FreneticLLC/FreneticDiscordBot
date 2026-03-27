@@ -36,7 +36,7 @@ namespace FreneticDiscordBot
 
         public const string TODO_PREFIX = NEGATIVE_PREFIX + "// TODO: ";
 
-        public static string[] Quotes = File.ReadAllText("./quotes.txt").Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n\n", ((char)0x01).ToString()).Split((char)0x01);
+        public string[] Quotes = File.ReadAllText("./quotes.txt").Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n\n", ((char)0x01).ToString()).Split((char)0x01);
 
         public FDSSection ConfigFile = new();
 
@@ -808,6 +808,7 @@ namespace FreneticDiscordBot
             Task.Factory.StartNew(() =>
             {
                 client.StopAsync().Wait();
+                client.Dispose();
             });
             CurrentBot = new FreneticDiscordBot([]);
         }
